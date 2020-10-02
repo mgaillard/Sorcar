@@ -3,6 +3,7 @@ import bpy
 
 from bpy.props import BoolProperty, StringProperty
 from bpy.types import NodeTree
+from ..nodes.constants.ScNumber import ScNumber
 from ..helper import update_each_frame, remove_object
 from ..debug import log, clear_logs, print_traceback
 
@@ -114,3 +115,26 @@ class ScNodeTree(NodeTree):
             self.execute_node();
         else:
             log(self.name, None, "set_preview", "Node not found")
+
+    def get_float_properties(self):
+        float_properties = {}
+        # Iterate over all ScNumber nodes of type FLOAT
+        for node in self.nodes:
+            if type(node) == ScNumber:
+                if node.prop_type == "FLOAT":
+                    float_properties[node.name] = float(node.prop_float)
+
+        log(self.name, None, "get_float_properties", repr(float_properties))
+        return float_properties
+
+    def get_object_boxes(self):
+        bounding_boxes = {}
+        for obj in self.objects:
+            center = obj.location
+            dimensions = obj.dimensions
+            min_corner = center - dimensions / 2.0
+            max_corner = center + dimensions / 2.0
+            bounding_boxes[obj.name] = {"min": min_corner, "max": max_corner}
+        
+        log(self.name, None, "get_object_boxes", repr(bounding_boxes))
+        return bounding_boxes
