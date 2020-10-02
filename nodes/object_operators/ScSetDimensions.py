@@ -8,6 +8,7 @@ from .._base.node_operator import ScObjectOperatorNode
 class ScSetDimensions(Node, ScObjectOperatorNode):
     bl_idname = "ScSetDimensions"
     bl_label = "Set Dimensions"
+    bl_icon = 'SHADING_BBOX'
     
     in_dimensions: FloatVectorProperty(update=ScNode.update_value)
 
@@ -16,4 +17,5 @@ class ScSetDimensions(Node, ScObjectOperatorNode):
         self.inputs.new("ScNodeSocketVector", "Dimensions").init("in_dimensions", True)
     
     def functionality(self):
+        super().functionality()
         self.inputs["Object"].default_value.dimensions = self.inputs["Dimensions"].default_value

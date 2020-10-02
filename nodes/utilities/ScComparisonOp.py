@@ -7,6 +7,7 @@ from .._base.node_base import ScNode
 class ScComparisonOp(Node, ScNode):
     bl_idname = "ScComparisonOp"
     bl_label = "Comparison Operation"
+    bl_icon = 'CON_SAMEVOL'
 
     in_x: FloatProperty(name="X", update=ScNode.update_value)
     in_y: FloatProperty(name="Y", update=ScNode.update_value)
@@ -21,11 +22,12 @@ class ScComparisonOp(Node, ScNode):
     
     def error_condition(self):
         return (
-            (not self.inputs["Operation"].default_value in ['LT', 'GT', 'LE', 'GE', 'EQ', 'NE'])
+            super().error_condition()
+            or (not self.inputs["Operation"].default_value in ['LT', 'GT', 'LE', 'GE', 'EQ', 'NE'])
         )
     
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         if (self.inputs["Operation"].default_value == "LT"):
             out["Value"] = self.inputs["X"].default_value < self.inputs["Y"].default_value
         elif (self.inputs["Operation"].default_value == "GT"):

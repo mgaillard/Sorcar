@@ -9,6 +9,7 @@ from ...helper import sc_poll_lattice
 class ScLatticeMod(Node, ScModifierNode):
     bl_idname = "ScLatticeMod"
     bl_label = "Lattice Modifier"
+    bl_icon = 'MOD_LATTICE'
     
     prop_vertex_group: StringProperty(update=ScNode.update_value)
     in_strength: FloatProperty(default=1.0, soft_min=0.0, soft_max=1.0, update=ScNode.update_value)
@@ -32,6 +33,7 @@ class ScLatticeMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].vertex_group = self.prop_vertex_group
         bpy.context.object.modifiers[self.prop_mod_name].object = self.inputs["Lattice"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].strength = self.inputs["Strength"].default_value

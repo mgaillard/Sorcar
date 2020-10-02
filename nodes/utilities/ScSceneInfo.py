@@ -7,6 +7,7 @@ from .._base.node_base import ScNode
 class ScSceneInfo(Node, ScNode):
     bl_idname = "ScSceneInfo"
     bl_label = "Scene Info"
+    bl_icon = 'SCENE_DATA'
 
     def init(self, context):
         super().init(context)
@@ -24,7 +25,7 @@ class ScSceneInfo(Node, ScNode):
     def post_execute(self):
         c = bpy.context
         s = c.scene
-        out = {}
+        out = super().post_execute()
         out["Start Frame"] = s.frame_start
         out["Current Frame"] = s.frame_current
         out["End Frame"] = s.frame_end

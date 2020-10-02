@@ -9,6 +9,7 @@ from ...helper import focus_on_object
 class ScReceiveFromSverchok(Node, ScInputNode):
     bl_idname = "ScReceiveFromSverchok"
     bl_label = "Receive from Sverchok"
+    bl_icon = 'RNA'
 
     prop_verts: StringProperty(default='''[[
         [0.0, 1.0, -0.05000000074505806],
@@ -799,6 +800,7 @@ class ScReceiveFromSverchok(Node, ScInputNode):
     prop_faces_mask: StringProperty(default=repr([[True]*136]))
     
     def functionality(self):
+        super().functionality()
         verts = eval(self.prop_verts)
         edges = eval(self.prop_edges)
         faces = eval(self.prop_faces)

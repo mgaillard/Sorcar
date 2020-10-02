@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScScrewMod(Node, ScModifierNode):
     bl_idname = "ScScrewMod"
     bl_label = "Screw Modifier"
+    bl_icon = 'MOD_SCREW'
     
     in_axis: EnumProperty(items=[("X", "X", ""), ("Y", "Y", ""), ("Z", "Z", "")], default="Z", update=ScNode.update_value)
     in_object: PointerProperty(type=bpy.types.Object, update=ScNode.update_value)
@@ -55,6 +56,7 @@ class ScScrewMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].axis = self.inputs["Axis"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].object = self.inputs["Axis Object"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].angle = self.inputs["Angle"].default_value

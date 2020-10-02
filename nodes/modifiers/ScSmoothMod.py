@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScSmoothMod(Node, ScModifierNode):
     bl_idname = "ScSmoothMod"
     bl_label = "Smooth Modifier"
+    bl_icon = 'MOD_SMOOTH'
     
     prop_vertex_group: StringProperty(update=ScNode.update_value)
     in_factor: FloatProperty(default=0.5, update=ScNode.update_value)
@@ -37,6 +38,7 @@ class ScSmoothMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].vertex_group = self.prop_vertex_group
         bpy.context.object.modifiers[self.prop_mod_name].factor = self.inputs["Factor"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].iterations = self.inputs["Repeat"].default_value

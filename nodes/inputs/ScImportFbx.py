@@ -9,6 +9,7 @@ from .._base.node_input import ScInputNode
 class ScImportFbx(Node, ScInputNode):
     bl_idname = "ScImportFbx"
     bl_label = "Import FBX"
+    bl_icon = 'IMPORT'
 
     in_file: StringProperty(subtype='FILE_PATH', update=ScNode.update_value)
     in_uv: BoolProperty(default=True, update=ScNode.update_value)
@@ -25,6 +26,7 @@ class ScImportFbx(Node, ScInputNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.ops.import_scene.fbx(
             filepath = bpy.path.abspath(self.inputs["File"].default_value),
             use_custom_normals = self.inputs["Generate UVs"].default_value

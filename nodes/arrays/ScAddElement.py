@@ -8,6 +8,7 @@ from .._base.node_base import ScNode
 class ScAddElement(Node, ScNode):
     bl_idname = "ScAddElement"
     bl_label = "Add Element"
+    bl_icon = 'ADD'
 
     in_use_index: BoolProperty(update=ScNode.update_value)
     in_index: IntProperty(update=ScNode.update_value)
@@ -21,7 +22,7 @@ class ScAddElement(Node, ScNode):
         self.outputs.new("ScNodeSocketArray", "New Array")
 
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         arr = eval(self.inputs["Array"].default_value)
         if (self.inputs["Use Index"].default_value):
             arr.insert(int(self.inputs["Index"].default_value), self.inputs["Element"].default_value)

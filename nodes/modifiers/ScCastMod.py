@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScCastMod(Node, ScModifierNode):
     bl_idname = "ScCastMod"
     bl_label = "Cast Modifier"
+    bl_icon = 'MOD_CAST'
     
     prop_vertex_group: StringProperty(update=ScNode.update_value)
     in_cast_type: EnumProperty(items=[("SPHERE", "Sphere", ""), ("CYLINDER", "Cylinder", ""), ("CUBOID", "Cuboid", "")], update=ScNode.update_value)
@@ -49,6 +50,7 @@ class ScCastMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].cast_type = self.inputs["Cast Type"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].use_x = self.inputs["X"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].use_y = self.inputs["Y"].default_value

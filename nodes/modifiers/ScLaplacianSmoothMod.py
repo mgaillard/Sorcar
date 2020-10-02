@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScLaplacianSmoothMod(Node, ScModifierNode):
     bl_idname = "ScLaplacianSmoothMod"
     bl_label = "Laplacian Smooth Modifier"
+    bl_icon = 'MOD_SMOOTH'
     
     prop_vertex_group: StringProperty(update=ScNode.update_value)
     in_iterations: IntProperty(name="Repeat", default=1, min=-32768, max=32767, soft_min=0, soft_max=200, update=ScNode.update_value)
@@ -43,6 +44,7 @@ class ScLaplacianSmoothMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].vertex_group = self.prop_vertex_group
         bpy.context.object.modifiers[self.prop_mod_name].iterations = self.inputs["Repeat"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].use_x = self.inputs["X"].default_value

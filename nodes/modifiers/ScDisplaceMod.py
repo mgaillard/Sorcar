@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScDisplaceMod(Node, ScModifierNode):
     bl_idname = "ScDisplaceMod"
     bl_label = "Displace Modifier"
+    bl_icon = 'MOD_DISPLACE'
     
     prop_texture: PointerProperty(type=bpy.types.Texture)
     prop_vertex_group: StringProperty(update=ScNode.update_value)
@@ -46,6 +47,7 @@ class ScDisplaceMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].texture = self.prop_texture
         bpy.context.object.modifiers[self.prop_mod_name].vertex_group = self.prop_vertex_group
         bpy.context.object.modifiers[self.prop_mod_name].uv_layer = self.prop_uv_layer

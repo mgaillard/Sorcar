@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScHookMod(Node, ScModifierNode):
     bl_idname = "ScHookMod"
     bl_label = "Hook Modifier"
+    bl_icon = 'HOOK'
     
     prop_vertex_group: StringProperty(update=ScNode.update_value)
     in_object: PointerProperty(type=bpy.types.Object, update=ScNode.update_value)
@@ -40,6 +41,7 @@ class ScHookMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].object = self.inputs["Hook Object"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].falloff_radius = self.inputs["Radius"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].strength = self.inputs["Strength"].default_value

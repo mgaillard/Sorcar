@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScSolidifyMod(Node, ScModifierNode):
     bl_idname = "ScSolidifyMod"
     bl_label = "Solidify Modifier"
+    bl_icon = 'MOD_SOLIDIFY'
     
     prop_vertex_group: StringProperty(update=ScNode.update_value)
     prop_invert_vertex_group: BoolProperty(update=ScNode.update_value)
@@ -64,6 +65,7 @@ class ScSolidifyMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].thickness = self.inputs["Thickness"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].thickness_clamp = self.inputs["Clamp"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].thickness_vertex_group = self.inputs["Factor"].default_value

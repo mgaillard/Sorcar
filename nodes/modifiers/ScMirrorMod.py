@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScMirrorMod(Node, ScModifierNode):
     bl_idname = "ScMirrorMod"
     bl_label = "Mirror Modifier"
+    bl_icon = 'MOD_MIRROR'
     
     in_use_x: BoolProperty(default=True, update=ScNode.update_value)
     in_use_y: BoolProperty(update=ScNode.update_value)
@@ -65,6 +66,7 @@ class ScMirrorMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].use_axis[0] = self.inputs["Axis X"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].use_axis[1] = self.inputs["Axis Y"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].use_axis[2] = self.inputs["Axis Z"].default_value

@@ -9,6 +9,7 @@ from .._base.node_operator import ScObjectOperatorNode
 class ScFindNearest(Node, ScObjectOperatorNode):
     bl_idname = "ScFindNearest"
     bl_label = "Find Nearest"
+    bl_icon = 'MOD_SIMPLIFY'
     
     in_origin: FloatVectorProperty(update=ScNode.update_value)
     in_distance: FloatProperty(default=100.0, min=0.0, update=ScNode.update_value)
@@ -23,7 +24,7 @@ class ScFindNearest(Node, ScObjectOperatorNode):
         self.outputs.new("ScNodeSocketNumber", "Distance")
     
     def error_condition(self):
-        return(
+        return (
             super().error_condition()
             or self.inputs["Distance"].default_value < 0.0
         )

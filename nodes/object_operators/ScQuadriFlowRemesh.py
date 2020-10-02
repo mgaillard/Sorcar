@@ -8,6 +8,7 @@ from .._base.node_operator import ScObjectOperatorNode
 class ScQuadriFlowRemesh(Node, ScObjectOperatorNode):
     bl_idname = "ScQuadriFlowRemesh"
     bl_label = "QuadriFlow Remesh"
+    bl_icon = 'MOD_REMESH'
 
     in_paint_symmetry: BoolProperty(default=True, update=ScNode.update_value)
     in_preserve_sharp: BoolProperty(update=ScNode.update_value)
@@ -38,7 +39,7 @@ class ScQuadriFlowRemesh(Node, ScObjectOperatorNode):
         self.inputs.new("ScNodeSocketBool", "Smooth Normals").init("in_smooth_normals", True)
     
     def error_condition(self):
-        return(
+        return (
             super().error_condition()
             or bpy.app.version[1] < 81
             or (not self.inputs["Mode"].default_value in ['RATIO', 'EDGE', 'FACES'])
@@ -49,6 +50,7 @@ class ScQuadriFlowRemesh(Node, ScObjectOperatorNode):
         )
 
     def functionality(self):
+        super().functionality()
         bpy.ops.object.quadriflow_remesh(
             use_paint_symmetry = self.inputs["Use Paint Symmetry"].default_value,
             use_preserve_sharp = self.inputs["Preserve Sharp"].default_value,

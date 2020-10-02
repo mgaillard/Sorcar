@@ -9,6 +9,7 @@ from ...helper import sc_poll_curve, sc_poll_mesh
 class ScArrayMod(Node, ScModifierNode):
     bl_idname = "ScArrayMod"
     bl_label = "Array Modifier"
+    bl_icon = 'MOD_ARRAY'
     
     in_fit_type: EnumProperty(items=[("FIXED_COUNT", "Fixed Count", ""), ("FIT_LENGTH", "Fit Length", ""), ("FIT_CURVE", "Fit Curve", "")], default="FIXED_COUNT", update=ScNode.update_value)
     in_count: IntProperty(default=2, min=1, max=1000, update=ScNode.update_value)
@@ -61,6 +62,7 @@ class ScArrayMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].fit_type = self.inputs["Fit Type"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].count = int(self.inputs["Count"].default_value)
         bpy.context.object.modifiers[self.prop_mod_name].fit_length = self.inputs["Length"].default_value

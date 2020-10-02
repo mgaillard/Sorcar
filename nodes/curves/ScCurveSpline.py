@@ -8,6 +8,7 @@ from .._base.node_operator import ScCurveOperatorNode
 class ScCurveSpline(Node, ScCurveOperatorNode):
     bl_idname = "ScCurveSpline"
     bl_label = "Curve Spline Properties"
+    bl_icon = 'CURVE_DATA'
     
     in_tilt: EnumProperty(name="Tilt", items=[("LINEAR", "Linear", ""), ("CARDINAL", "Cardinal", ""), ("BSPLINE", "Bspline", ""), ("EASE", "Ease", "")], default="LINEAR", update=ScNode.update_value)
     in_radius: EnumProperty(name="Radius", items=[("LINEAR", "Linear", ""), ("CARDINAL", "Cardinal", ""), ("BSPLINE", "Bspline", ""), ("EASE", "Ease", "")], default="LINEAR", update=ScNode.update_value)
@@ -24,7 +25,7 @@ class ScCurveSpline(Node, ScCurveOperatorNode):
         self.inputs.new("ScNodeSocketBool", "Smooth").init("in_smooth", True)
     
     def error_condition(self):
-        return(
+        return (
             super().error_condition()
             or (not self.inputs["Tilt"].default_value in ['LINEAR', 'CARDINAL', 'BSPLINE', 'EASE'])
             or (not self.inputs["Radius"].default_value in ['LINEAR', 'CARDINAL', 'BSPLINE', 'EASE'])
@@ -32,6 +33,7 @@ class ScCurveSpline(Node, ScCurveOperatorNode):
         )
     
     def functionality(self):
+        super().functionality()
         self.inputs["Curve"].default_value.data.splines[0].tilt_interpolation = self.inputs["Tilt"].default_value
         self.inputs["Curve"].default_value.data.splines[0].radius_interpolation = self.inputs["Radius"].default_value
         self.inputs["Curve"].default_value.data.splines[0].resolution_u = int(self.inputs["Resolution"].default_value)

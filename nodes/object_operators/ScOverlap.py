@@ -9,6 +9,7 @@ from .._base.node_operator import ScObjectOperatorNode
 class ScOverlap(Node, ScObjectOperatorNode):
     bl_idname = "ScOverlap"
     bl_label = "Overlap"
+    bl_icon = 'SELECT_INTERSECT'
 
     in_object: PointerProperty(type=bpy.types.Object, update=ScNode.update_value)
 
@@ -19,7 +20,7 @@ class ScOverlap(Node, ScObjectOperatorNode):
         self.outputs.new("ScNodeSocketArray", "Secondary Indices")
     
     def error_condition(self):
-        return(
+        return (
             super().error_condition()
             or self.inputs["Secondary Object"].default_value == None
         )

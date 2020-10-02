@@ -9,6 +9,7 @@ from ...helper import focus_on_object, remove_object, sc_poll_mesh, apply_all_mo
 class ScCustomObject(Node, ScInputNode):
     bl_idname = "ScCustomObject"
     bl_label = "Custom Object"
+    bl_icon = 'EYEDROPPER'
 
     in_obj: PointerProperty(type=bpy.types.Object, poll=sc_poll_mesh, update=ScNode.update_value)
     in_hide: BoolProperty(default=True, update=ScNode.update_value)
@@ -25,10 +26,12 @@ class ScCustomObject(Node, ScInputNode):
         )
     
     def pre_execute(self):
+        super().pre_execute()
         self.inputs["Object"].default_value.hide_set(False)
         focus_on_object(self.inputs["Object"].default_value)
     
     def functionality(self):
+        super().functionality()
         bpy.ops.object.duplicate()
     
     def post_execute(self):

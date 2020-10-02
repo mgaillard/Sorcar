@@ -5,11 +5,13 @@ from bpy.props import PointerProperty, StringProperty, EnumProperty, BoolPropert
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_operator import ScObjectOperatorNode
-from ...helper import focus_on_object, remove_object, print_log
+from ...helper import focus_on_object, remove_object
+from ...debug import log
 
 class ScScatter(Node, ScObjectOperatorNode):
     bl_idname = "ScScatter"
     bl_label = "Scatter"
+    bl_icon = 'OUTLINER_OB_POINTCLOUD'
 
     prop_loc: EnumProperty(items=[('X', 'X', '', 2), ('Y', 'Y', '', 4), ('Z', 'Z', '', 8)], default={'X', 'Y', 'Z'}, options={'ENUM_FLAG'}, update=ScNode.update_value)
     prop_rot: EnumProperty(items=[('X', 'X', '', 2), ('Y', 'Y', '', 4), ('Z', 'Z', '', 8)], default={'X', 'Y', 'Z'}, options={'ENUM_FLAG'}, update=ScNode.update_value)
@@ -36,7 +38,7 @@ class ScScatter(Node, ScObjectOperatorNode):
             layout.prop(self, "prop_rot", expand=True)
     
     def error_condition(self):
-        return(
+        return (
             super().error_condition()
             or self.inputs["Scatter Object"].default_value == None
             or (not self.inputs["Component"].default_value in ['FACES', 'VERTS', 'EDGES'])
@@ -50,6 +52,7 @@ class ScScatter(Node, ScObjectOperatorNode):
         self.inputs["Scatter Object"].default_value.hide_set(False)
     
     def functionality(self):
+        super().functionality()
         if (self.inputs["Type"].default_value == 'INST'):
             o = self.inputs["Object"].default_value
             so = self.inputs["Scatter Object"].default_value
@@ -106,10 +109,11 @@ class ScScatter(Node, ScObjectOperatorNode):
         return out
     
     def free(self):
+        super().free()
         for object in self.prop_obj_array[1:-1].split(', '):
             try:
                 obj = eval(object)
             except:
-                print_log(self.id_data.name, self.name, "free", "Invalid object: " + object)
+                log(self.id_data.name, self.name, "free", "Invalid object: " + object, 2)
                 continue
             self.id_data.unregister_object(obj)

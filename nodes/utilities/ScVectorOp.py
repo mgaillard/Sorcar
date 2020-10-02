@@ -8,6 +8,7 @@ from .._base.node_base import ScNode
 class ScVectorOp(Node, ScNode):
     bl_idname = "ScVectorOp"
     bl_label = "Vector Operation"
+    bl_icon = 'CON_LOCLIMIT'
 
     in_x: FloatVectorProperty(update=ScNode.update_value)
     in_y: FloatVectorProperty(update=ScNode.update_value)
@@ -24,12 +25,13 @@ class ScVectorOp(Node, ScNode):
     
     def error_condition(self):
         return (
-            (not self.inputs["Operation"].default_value in ["ADD", "SUB", "MULT", "CROSS", "DOT", "ANGLE", "PROJ", "REFL", "ROT", "NORM", "ORTHO", "LERP", "SLERP"])
+            super().error_condition()
+            or (not self.inputs["Operation"].default_value in ["ADD", "SUB", "MULT", "CROSS", "DOT", "ANGLE", "PROJ", "REFL", "ROT", "NORM", "ORTHO", "LERP", "SLERP"])
             or (self.inputs["Operation"].default_value == "LERP" and (self.inputs["K"].default_value < 0 or self.inputs["K"].default_value > 1))
         )
 
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         if (self.inputs["Operation"].default_value == 'ADD'):
             out["Value"] = Vector(self.inputs["X"].default_value) + Vector(self.inputs["Y"].default_value)
         elif (self.inputs["Operation"].default_value == 'SUB'):

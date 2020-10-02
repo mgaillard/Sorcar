@@ -4,7 +4,6 @@ from bpy.props import PointerProperty, BoolProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_selection import ScSelectionNode
-from ...helper import print_log
 
 class ScSelectByMaterial(Node, ScSelectionNode):
     bl_idname = "ScSelectByMaterial"
@@ -39,6 +38,7 @@ class ScSelectByMaterial(Node, ScSelectionNode):
                 bpy.ops.mesh.select_all(action="DESELECT")
     
     def functionality(self):
+        super().functionality()
         self.inputs["Object"].default_value.active_material_index = self.inputs["Object"].default_value.material_slots.find(self.prop_mat.name)
         if (self.inputs["Deselect"].default_value):
             bpy.ops.object.material_slot_deselect()

@@ -9,6 +9,7 @@ from ...helper import remove_object
 class ScDuplicateObject(Node, ScObjectOperatorNode):
     bl_idname = "ScDuplicateObject"
     bl_label = "Duplicate Object"
+    bl_icon = 'DUPLICATE'
 
     in_linked: BoolProperty(update=ScNode.update_value)
     out_mesh: PointerProperty(type=bpy.types.Object)
@@ -19,6 +20,7 @@ class ScDuplicateObject(Node, ScObjectOperatorNode):
         self.outputs.new("ScNodeSocketObject", "Duplicate Object")
     
     def functionality(self):
+        super().functionality()
         bpy.ops.object.duplicate(
             linked = self.inputs["Linked"].default_value
         )
@@ -31,4 +33,5 @@ class ScDuplicateObject(Node, ScObjectOperatorNode):
         return out
     
     def free(self):
+        super().free()
         self.id_data.unregister_object(self.out_mesh)

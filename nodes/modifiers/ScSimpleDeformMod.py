@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScSimpleDeformMod(Node, ScModifierNode):
     bl_idname = "ScSimpleDeformMod"
     bl_label = "Simple Deform Modifier"
+    bl_icon = 'MOD_SIMPLEDEFORM'
     
     prop_vertex_group: StringProperty(update=ScNode.update_value)
     prop_invert_vertex_group: BoolProperty(update=ScNode.update_value)
@@ -53,6 +54,7 @@ class ScSimpleDeformMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].deform_method = self.inputs["Deform Method"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].deform_axis = self.inputs["Deform Axis"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].origin = self.inputs["Origin"].default_value

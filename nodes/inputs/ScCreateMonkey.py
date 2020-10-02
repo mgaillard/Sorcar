@@ -8,6 +8,7 @@ from .._base.node_input import ScInputNode
 class ScCreateMonkey(Node, ScInputNode):
     bl_idname = "ScCreateMonkey"
     bl_label = "Create Monkey (Suzanne)"
+    bl_icon = 'MESH_MONKEY'
 
     in_uv: BoolProperty(default=True, update=ScNode.update_value)
     in_size: FloatProperty(default=2.0, min=0.0, update=ScNode.update_value)
@@ -24,6 +25,7 @@ class ScCreateMonkey(Node, ScInputNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.ops.mesh.primitive_monkey_add(
             size = self.inputs["Size"].default_value,
             calc_uvs = self.inputs["Generate UVs"].default_value

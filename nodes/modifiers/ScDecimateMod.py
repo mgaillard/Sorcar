@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScDecimateMod(Node, ScModifierNode):
     bl_idname = "ScDecimateMod"
     bl_label = "Decimate Modifier"
+    bl_icon = 'MOD_DECIM'
     
     prop_vertex_group: StringProperty(update=ScNode.update_value)
     prop_invert_vertex_group: BoolProperty(update=ScNode.update_value)
@@ -55,6 +56,7 @@ class ScDecimateMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].decimate_type = self.inputs["Type"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].vertex_group = self.prop_vertex_group
         bpy.context.object.modifiers[self.prop_mod_name].ratio = self.inputs["Ratio"].default_value

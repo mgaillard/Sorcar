@@ -8,6 +8,7 @@ from .._base.node_setting import ScSettingNode
 class ScPivotPoint(Node, ScSettingNode):
     bl_idname = "ScPivotPoint"
     bl_label = "Pivot Point"
+    bl_icon = 'PIVOT_MEDIAN'
 
     in_pivot: EnumProperty(items=[("BOUNDING_BOX_CENTER", "Bound Box Center", ""), ("CURSOR", "Cursor", ""), ("INDIVIDUAL_ORIGINS", "Individual Origins", ""), ("MEDIAN_POINT", "Median Point", ""), ("ACTIVE_ELEMENT", "Active Element", "")], default="MEDIAN_POINT", update=ScNode.update_value)
     in_origin: BoolProperty(update=ScNode.update_value)
@@ -24,5 +25,6 @@ class ScPivotPoint(Node, ScSettingNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.scene.tool_settings.transform_pivot_point = self.inputs["Pivot Point"].default_value
         bpy.context.scene.tool_settings.use_transform_pivot_point_align = self.inputs["Only Origins"].default_value

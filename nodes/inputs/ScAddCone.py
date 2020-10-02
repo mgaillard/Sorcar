@@ -8,6 +8,7 @@ from .._base.node_operator import ScEditOperatorNode
 class ScAddCone(Node, ScEditOperatorNode):
     bl_idname = "ScAddCone"
     bl_label = "Add Cone"
+    bl_icon = 'CONE'
 
     in_uv: BoolProperty(default=True, update=ScNode.update_value)
     in_type: EnumProperty(items=[("NOTHING", "Nothing", ""), ("NGON", "Ngon", ""), ("TRIFAN", "Triangle Fan", "")], default="NGON", update=ScNode.update_value)
@@ -36,6 +37,7 @@ class ScAddCone(Node, ScEditOperatorNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.ops.mesh.primitive_cone_add(
             vertices = int(self.inputs["Vertices"].default_value),
             radius1 = self.inputs["Radius 1"].default_value,

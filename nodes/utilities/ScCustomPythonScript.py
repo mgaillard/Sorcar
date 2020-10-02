@@ -4,13 +4,14 @@ import math
 from bpy.props import IntProperty, StringProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
-from ...helper import print_log
+from ...debug import log
 
 class ScCustomPythonScript(Node, ScNode):
     bl_idname = "ScCustomPythonScript"
     bl_label = "Custom Python Script"
+    bl_icon = 'FILE_SCRIPT'
 
-    in_script: StringProperty(default="print('Hello')", update=ScNode.update_value)
+    in_script: StringProperty(default="print('Hello World')", update=ScNode.update_value)
     in_iteration: IntProperty(default=1, min=1, soft_max=50, update=ScNode.update_value)
 
     def init(self, context):
@@ -22,13 +23,15 @@ class ScCustomPythonScript(Node, ScNode):
     
     def error_condition(self):
         return (
-            int(self.inputs["Repeat"].default_value) < 1
+            super().error_condition()
+            or int(self.inputs["Repeat"].default_value) < 1
         )
     
     def pre_execute(self):
-        print_log(self.name, None, None, self.inputs["Script"].default_value)
+        log(self.id_data.name, self.name, "pre_execute", "Script:\n"+self.inputs["Script"].default_value, 2)
     
     def functionality(self):
+        super().functionality()
         _C = bpy.context
         _D = bpy.data
         _O = bpy.ops
@@ -43,4 +46,6 @@ class ScCustomPythonScript(Node, ScNode):
             exec(self.inputs["Script"].default_value)
 
     def post_execute(self):
-        return {"Out": self.inputs["In"].default_value}
+        out = super().post_execute()
+        out["Out"] = self.inputs["In"].default_value
+        return out

@@ -8,6 +8,7 @@ from .._base.node_base import ScNode
 class ScSelectionType(Node, ScNode):
     bl_idname = "ScSelectionType"
     bl_label = "Selection Type"
+    bl_icon = 'UV_VERTEXSEL'
 
     prop_type: EnumProperty(name="Mode", items=[("VERT", "Vertices", "", "VERTEXSEL", 1), ("EDGE", "Edges", "", "EDGESEL", 2), ("FACE", "Faces", "", "FACESEL", 4)], default={"VERT"}, options={"ENUM_FLAG"}, update=ScNode.update_value)
     def init(self, context):
@@ -19,4 +20,6 @@ class ScSelectionType(Node, ScNode):
         layout.column().prop(self, "prop_type")
     
     def post_execute(self):
-        return {"Value": self.prop_type}
+        out = super().post_execute()
+        out["Value"] = self.prop_type
+        return out

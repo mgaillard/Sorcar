@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScRemeshMod(Node, ScModifierNode):
     bl_idname = "ScRemeshMod"
     bl_label = "Remesh Modifier"
+    bl_icon = 'MOD_REMESH'
 
     in_mode: EnumProperty(items=[("BLOCKS", "Blocks", ""), ("SMOOTH", "Smooth", ""), ("SHARP", "Sharp", "")], default="SHARP", update=ScNode.update_value)
     in_octree_depth: IntProperty(default=4, min=1, max=12, update=ScNode.update_value)
@@ -38,6 +39,7 @@ class ScRemeshMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].mode = self.inputs["Mode"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].octree_depth = int(self.inputs["Octree Depth"].default_value)
         bpy.context.object.modifiers[self.prop_mod_name].scale = self.inputs["Scale"].default_value

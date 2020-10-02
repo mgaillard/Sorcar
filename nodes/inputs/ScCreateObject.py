@@ -7,6 +7,7 @@ from .._base.node_input import ScInputNode
 class ScCreateObject(Node, ScInputNode):
     bl_idname = "ScCreateObject"
     bl_label = "Create Object"
+    bl_icon = 'OBJECT_DATAMODE'
 
     def init(self, context):
         super().init(context)
@@ -15,6 +16,7 @@ class ScCreateObject(Node, ScInputNode):
         self.inputs.new("ScNodeSocketArray", "Faces")
     
     def functionality(self):
+        super().functionality()
         bpy.ops.object.add(
             type = "MESH",
             align = "CURSOR"

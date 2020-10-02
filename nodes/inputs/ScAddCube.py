@@ -8,6 +8,7 @@ from .._base.node_operator import ScEditOperatorNode
 class ScAddCube(Node, ScEditOperatorNode):
     bl_idname = "ScAddCube"
     bl_label = "Add Cube"
+    bl_icon = 'CUBE'
     
     in_uv: BoolProperty(default=True, update=ScNode.update_value)
     in_size: FloatProperty(default=2.0, min=0.0, update=ScNode.update_value)
@@ -24,6 +25,7 @@ class ScAddCube(Node, ScEditOperatorNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.ops.mesh.primitive_cube_add(
             size = self.inputs["Size"].default_value,
             calc_uvs = self.inputs["Generate UVs"].default_value

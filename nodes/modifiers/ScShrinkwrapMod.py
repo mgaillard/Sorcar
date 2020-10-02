@@ -9,6 +9,7 @@ from ...helper import sc_poll_mesh
 class ScShrinkwrapMod(Node, ScModifierNode):
     bl_idname = "ScShrinkwrapMod"
     bl_label = "Shrinkwrap Modifier"
+    bl_icon = 'MOD_SHRINKWRAP'
     
     prop_vertex_group: StringProperty(update=ScNode.update_value)
     prop_invert_vertex_group: BoolProperty(update=ScNode.update_value)
@@ -64,6 +65,7 @@ class ScShrinkwrapMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].vertex_group = self.prop_vertex_group
         bpy.context.object.modifiers[self.prop_mod_name].invert_vertex_group = self.prop_invert_vertex_group
         bpy.context.object.modifiers[self.prop_mod_name].target = self.inputs["Target"].default_value

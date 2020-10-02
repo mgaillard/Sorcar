@@ -8,6 +8,7 @@ from .._base.node_base import ScNode
 class ScSearchElement(Node, ScNode):
     bl_idname = "ScSearchElement"
     bl_label = "Search Element"
+    bl_icon = 'ZOOM_ALL'
 
     in_range: BoolProperty(update=ScNode.update_value)
     in_start: IntProperty(update=ScNode.update_value)
@@ -23,7 +24,7 @@ class ScSearchElement(Node, ScNode):
         self.outputs.new("ScNodeSocketNumber", "Index")
 
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         try:
             if (self.inputs["Use Range"].default_value):
                 index = eval(self.inputs["Array"].default_value).index(self.inputs["Element"].default_value, int(self.inputs["Start Index"].default_value), int(self.inputs["End Index"].default_value))

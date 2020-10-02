@@ -9,6 +9,7 @@ from .._base.node_operator import ScObjectOperatorNode
 class ScRaycastObject(Node, ScObjectOperatorNode):
     bl_idname = "ScRaycastObject"
     bl_label = "Raycast (Object)"
+    bl_icon = 'OUTLINER_DATA_LIGHTPROBE'
     
     in_origin: FloatVectorProperty(update=ScNode.update_value)
     in_direction: FloatVectorProperty(update=ScNode.update_value)
@@ -25,7 +26,7 @@ class ScRaycastObject(Node, ScObjectOperatorNode):
         self.outputs.new("ScNodeSocketNumber", "Distance")
     
     def error_condition(self):
-        return(
+        return (
             super().error_condition()
             or self.inputs["Distance"].default_value < 0.0
         )

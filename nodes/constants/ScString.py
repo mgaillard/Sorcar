@@ -7,6 +7,7 @@ from .._base.node_base import ScNode
 class ScString(Node, ScNode):
     bl_idname = "ScString"
     bl_label = "String"
+    bl_icon = 'SYNTAX_OFF'
 
     prop_string: StringProperty(name="String", update=ScNode.update_value)
 
@@ -19,4 +20,6 @@ class ScString(Node, ScNode):
         layout.prop(self, "prop_string")
     
     def post_execute(self):
-        return {"Value": self.prop_string}
+        out = super().post_execute()
+        out["Value"] = self.prop_string
+        return out

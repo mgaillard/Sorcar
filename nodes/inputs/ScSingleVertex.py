@@ -9,6 +9,7 @@ from .._base.node_input import ScInputNode
 class ScSingleVertex(Node, ScInputNode):
     bl_idname = "ScSingleVertex"
     bl_label = "Single Vertex"
+    bl_icon = 'DOT'
 
     in_show_name: BoolProperty(update=ScNode.update_value)
 
@@ -17,6 +18,7 @@ class ScSingleVertex(Node, ScInputNode):
         self.inputs.new("ScNodeSocketBool", "Show Name").init("in_show_name", True)
 
     def functionality(self):
+        super().functionality()
         m = bpy.data.meshes.new(self.inputs["Name"].default_value)
         obj = bpy.data.objects.new(self.inputs["Name"].default_value, m)
         obj.location = bpy.context.scene.cursor.location

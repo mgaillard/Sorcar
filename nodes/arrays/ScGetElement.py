@@ -7,6 +7,7 @@ from .._base.node_base import ScNode
 class ScGetElement(Node, ScNode):
     bl_idname = "ScGetElement"
     bl_label = "Get Element"
+    bl_icon = 'SHORTDISPLAY'
     
     in_index: IntProperty(update=ScNode.update_value)
 
@@ -17,7 +18,7 @@ class ScGetElement(Node, ScNode):
         self.outputs.new("ScNodeSocketUniversal", "Element")
     
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         try:
             out["Element"] = repr(eval(self.inputs["Array"].default_value)[int(self.inputs["Index"].default_value)])
         except:

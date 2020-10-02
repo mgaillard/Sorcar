@@ -8,6 +8,7 @@ from .._base.node_setting import ScSettingNode
 class ScProportionalEditing(Node, ScSettingNode):
     bl_idname = "ScProportionalEditing"
     bl_label = "Proportional Editing"
+    bl_icon = 'PROP_ON'
 
     in_falloff: EnumProperty(items=[('SMOOTH', 'Smooth', ''), ('SPHERE', 'Sphere', ''), ('ROOT', 'Root', ''), ('INVERSE_SQUARE', 'Inverse Square', ''), ('SHARP', 'Sharp', ''), ('LINEAR', 'Linear', ''), ('CONSTANT', 'Constant', ''), ('RANDOM', 'Random', '')], update=ScNode.update_value)
     in_size: FloatProperty(default=1.0, min=0.00001, max=5000, update=ScNode.update_value)
@@ -31,6 +32,7 @@ class ScProportionalEditing(Node, ScSettingNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.scene.tool_settings.proportional_edit_falloff = self.inputs["Falloff"].default_value
         bpy.context.scene.tool_settings.proportional_size = self.inputs["Size"].default_value
         bpy.context.scene.tool_settings.use_proportional_connected = self.inputs["Connected Only"].default_value

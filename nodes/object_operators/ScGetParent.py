@@ -7,6 +7,7 @@ from ...helper import focus_on_object
 class ScGetParent(Node, ScNode):
     bl_idname = "ScGetParent"
     bl_label = "Get Parent"
+    bl_icon = 'CON_CHILDOF'
     
     def init(self, context):
         super().init(context)
@@ -15,8 +16,11 @@ class ScGetParent(Node, ScNode):
     
     def error_condition(self):
         return (
-            self.inputs["Object"].default_value == None
+            super().error_condition()
+            or self.inputs["Object"].default_value == None
         )
     
     def post_execute(self):
-        return {"Parent": self.inputs["Object"].default_value.parent}
+        out = super().post_execute()
+        out["Parent"] = self.inputs["Object"].default_value.parent
+        return out

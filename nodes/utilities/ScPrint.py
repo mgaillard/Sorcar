@@ -3,11 +3,12 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
-from ...helper import print_log
+from ...debug import log
 
 class ScPrint(Node, ScNode):
     bl_idname = "ScPrint"
     bl_label = "Print"
+    bl_icon = 'CONSOLE'
 
     prop_force: BoolProperty(name="Force Re-evaluate", update=ScNode.update_value)
     in_str: StringProperty(update=ScNode.update_value)
@@ -24,11 +25,12 @@ class ScPrint(Node, ScNode):
         layout.prop(self, "prop_force")
     
     def execute(self, forced=False):
-        forced = forced or self.prop_force
-        return super().execute(forced=forced)
+        return super().execute(forced or self.prop_force)
     
     def functionality(self):
-        print_log(self.name, msg=self.inputs["String"].default_value)
+        log(self.id_data.name, self.name, "functionality", "Text:\n"+self.inputs["String"].default_value)
     
     def post_execute(self):
-        return {"Out": self.inputs["In"].default_value}
+        out = super().post_execute()
+        out["Out"] = self.inputs["In"].default_value
+        return out

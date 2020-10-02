@@ -7,6 +7,7 @@ from .._base.node_base import ScNode
 class ScCountElement(Node, ScNode):
     bl_idname = "ScCountElement"
     bl_label = "Count Element"
+    bl_icon = "THREE_DOTS"
 
     def init(self, context):
         super().init(context)
@@ -15,6 +16,6 @@ class ScCountElement(Node, ScNode):
         self.outputs.new("ScNodeSocketNumber", "Value")
 
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         out["Value"] = eval(self.inputs["Array"].default_value).count(self.inputs["Element"].default_value)
         return out

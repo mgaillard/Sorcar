@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScWireframeMod(Node, ScModifierNode):
     bl_idname = "ScWireframeMod"
     bl_label = "Wireframe Modifier"
+    bl_icon = 'MOD_WIREFRAME'
 
     prop_vertex_group: StringProperty(update=ScNode.update_value)
     prop_invert_vertex_group: BoolProperty(update=ScNode.update_value)
@@ -51,6 +52,7 @@ class ScWireframeMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].thickness = self.inputs["Thickness"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].vertex_group = self.prop_vertex_group
         bpy.context.object.modifiers[self.prop_mod_name].invert_vertex_group = self.prop_invert_vertex_group

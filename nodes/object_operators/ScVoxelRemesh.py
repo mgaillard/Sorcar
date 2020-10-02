@@ -8,6 +8,7 @@ from .._base.node_operator import ScObjectOperatorNode
 class ScVoxelRemesh(Node, ScObjectOperatorNode):
     bl_idname = "ScVoxelRemesh"
     bl_label = "Voxel Remesh"
+    bl_icon = 'FILE_VOLUME'
 
     in_remesh_voxel_size: FloatProperty(default=0.1, min=0.0001, update=ScNode.update_value)
     in_remesh_voxel_adaptivity: FloatProperty(default=0.0, min=0.0, max=1.0, update=ScNode.update_value)
@@ -26,7 +27,7 @@ class ScVoxelRemesh(Node, ScObjectOperatorNode):
         self.inputs.new("ScNodeSocketBool", "Preserve Paint Mask").init("in_use_remesh_preserve_paint_mask")
     
     def error_condition(self):
-        return(
+        return (
             super().error_condition()
             or bpy.app.version[1] < 81
             or self.inputs["Voxel Size"].default_value < 0.0
@@ -34,6 +35,7 @@ class ScVoxelRemesh(Node, ScObjectOperatorNode):
         )
 
     def functionality(self):
+        super().functionality()
         self.inputs["Object"].default_value.data.remesh_voxel_size = self.inputs["Voxel Size"].default_value
         self.inputs["Object"].default_value.data.remesh_voxel_adaptivity = self.inputs["Adaptivity"].default_value
         self.inputs["Object"].default_value.data.use_remesh_fix_poles = self.inputs["Fix Poles"].default_value

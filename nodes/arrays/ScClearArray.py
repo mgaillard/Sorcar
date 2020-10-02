@@ -7,6 +7,7 @@ from .._base.node_base import ScNode
 class ScClearArray(Node, ScNode):
     bl_idname = "ScClearArray"
     bl_label = "Clear Array"
+    bl_icon = 'CANCEL'
 
     def init(self, context):
         super().init(context)
@@ -14,7 +15,7 @@ class ScClearArray(Node, ScNode):
         self.outputs.new("ScNodeSocketArray", "Empty Array")
 
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         arr = eval(self.inputs["Array"].default_value)
         arr.clear()
         out["Empty Array"] = repr(arr)

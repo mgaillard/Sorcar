@@ -9,6 +9,7 @@ from ...helper import focus_on_object
 class ScSendToSverchok(Node, ScObjectOperatorNode):
     bl_idname = "ScSendToSverchok"
     bl_label = "Send to Sverchok"
+    bl_icon = 'RNA_ADD'
 
     def sv_poll(self, object):
         return object.bl_idname == "SverchCustomTreeType"
@@ -39,6 +40,7 @@ class ScSendToSverchok(Node, ScObjectOperatorNode):
         super().pre_execute()
     
     def functionality(self):
+        super().functionality()
         obj = self.inputs["Object"].default_value
         self.prop_tree.nodes[self.prop_node].set_mesh(
             repr([[list(i.co) for i in obj.data.vertices]]),

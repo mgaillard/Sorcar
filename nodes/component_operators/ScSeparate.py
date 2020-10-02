@@ -4,7 +4,7 @@ from bpy.props import EnumProperty, StringProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_operator import ScEditOperatorNode
-from ...helper import print_log
+from ...debug import log
 
 class ScSeparate(Node, ScEditOperatorNode):
     bl_idname = "ScSeparate"
@@ -19,7 +19,7 @@ class ScSeparate(Node, ScEditOperatorNode):
         self.outputs.new("ScNodeSocketArray", "Separated Objects")
     
     def error_condition(self):
-        return(
+        return (
             super().error_condition()
             or (not self.inputs["Type"].default_value in ['SELECTED', 'MATERIAL', 'LOOSE'])
         )
@@ -29,6 +29,7 @@ class ScSeparate(Node, ScEditOperatorNode):
         self.prop_obj_array = "[]"
     
     def functionality(self):
+        super().functionality()
         bpy.ops.mesh.separate(
             type = self.inputs["Type"].default_value
         )
@@ -45,10 +46,11 @@ class ScSeparate(Node, ScEditOperatorNode):
         return ret
     
     def free(self):
+        super().free()
         for object in self.prop_obj_array[1:-1].split(', '):
             try:
                 obj = eval(object)
             except:
-                print_log(self.id_data.name, self.name, "free", "Invalid object: " + object)
+                log(self.id_data.name, self.name, "free", "Invalid object: " + object, 2)
                 continue
             self.id_data.unregister_object(obj)

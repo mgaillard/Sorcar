@@ -31,6 +31,7 @@ op_items = [
 class ScMathsOp(Node, ScNode):
     bl_idname = "ScMathsOp"
     bl_label = "Maths Operation"
+    bl_icon = 'CON_TRANSLIKE'
 
     in_x: FloatProperty(update=ScNode.update_value)
     in_y: FloatProperty(update=ScNode.update_value)
@@ -45,16 +46,19 @@ class ScMathsOp(Node, ScNode):
     
     def error_condition(self):
         op = self.inputs["Operation"].default_value
+        x = self.inputs["X"].default_value
+        y = self.inputs["Y"].default_value
         return (
-            (not op in [i[0] for i in op_items if i])
-            or (op in ['DIV', 'MOD'] and self.inputs["Y"].default_value == 0)
-            or (op == "POW" and self.inputs["X"].default_value == 0 and self.inputs["Y"].default_value == 0)
-            or (op == "LOG" and (self.inputs["X"].default_value <= 0 or self.inputs["Y"].default_value < 0 or self.inputs["Y"].default_value == 1))
-            or (op == "FACT" and int(self.inputs["X"].default_value) < 0)
+            super().error_condition()
+            or (not op in [i[0] for i in op_items if i])
+            or (op in ['DIV', 'MOD'] and y == 0)
+            or (op == "POW" and x == 0 and y == 0)
+            or (op == "LOG" and (x <= 0 or y < 0 or y == 1))
+            or (op == "FACT" and int(x) < 0)
         )
 
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         op = self.inputs["Operation"].default_value
         x = self.inputs["X"].default_value
         y = self.inputs["Y"].default_value

@@ -8,6 +8,7 @@ from .._base.node_input import ScInputNode
 class ScCreateIcoSphere(Node, ScInputNode):
     bl_idname = "ScCreateIcoSphere"
     bl_label = "Create Ico Sphere"
+    bl_icon = 'MESH_ICOSPHERE'
 
     in_uv: BoolProperty(default=True, update=ScNode.update_value)
     in_subdivision: IntProperty(default=2, min=1, max=10, update=ScNode.update_value)
@@ -27,6 +28,7 @@ class ScCreateIcoSphere(Node, ScInputNode):
         )
     
     def functionality(self):        
+        super().functionality()
         bpy.ops.mesh.primitive_ico_sphere_add(
             subdivisions = int(self.inputs["Subdivisions"].default_value),
             radius = self.inputs["Radius"].default_value,

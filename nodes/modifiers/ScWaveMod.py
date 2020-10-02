@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScWaveMod(Node, ScModifierNode):
     bl_idname = "ScWaveMod"
     bl_label = "Wave Modifier"
+    bl_icon = 'MOD_WAVE'
     
     in_offset: FloatProperty(min=0.0, max=1048570.0, update=ScNode.update_value)
     in_speed: FloatProperty(default=0.25, soft_min=0.0, soft_max=1.0, update=ScNode.update_value)
@@ -47,6 +48,7 @@ class ScWaveMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].time_offset = bpy.context.scene.frame_current - self.inputs["Offset"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].speed = self.inputs["Speed"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].height = self.inputs["Height"].default_value

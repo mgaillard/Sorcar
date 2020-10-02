@@ -8,6 +8,7 @@ from .._base.node_input import ScInputNode
 class ScCreateTorus(Node, ScInputNode):
     bl_idname = "ScCreateTorus"
     bl_label = "Create Torus"
+    bl_icon = 'MESH_TORUS'
 
     in_uv: BoolProperty(default=True, update=ScNode.update_value)
     in_mode: EnumProperty(items=[("MAJOR_MINOR", "Major/Minor", ""), ("EXT_INT", "Exterior/Interior", "")], default="MAJOR_MINOR", update=ScNode.update_value)
@@ -42,6 +43,7 @@ class ScCreateTorus(Node, ScInputNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.ops.mesh.primitive_torus_add(
             major_segments = int(self.inputs["Major Segments"].default_value),
             minor_segments = int(self.inputs["Minor Segments"].default_value),

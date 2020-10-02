@@ -8,6 +8,7 @@ from .._base.node_input import ScInputNode
 class ScCreateCylinder(Node, ScInputNode):
     bl_idname = "ScCreateCylinder"
     bl_label = "Create Cylinder"
+    bl_icon = 'MESH_CYLINDER'
 
     in_uv: BoolProperty(default=True, update=ScNode.update_value)
     in_type: EnumProperty(items=[("NOTHING", "Nothing", ""), ("NGON", "Ngon", ""), ("TRIFAN", "Triangle Fan", "")], default="NGON", update=ScNode.update_value)
@@ -33,6 +34,7 @@ class ScCreateCylinder(Node, ScInputNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.ops.mesh.primitive_cylinder_add(
             vertices = int(self.inputs["Vertices"].default_value),
             radius = self.inputs["Radius"].default_value,

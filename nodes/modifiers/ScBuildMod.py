@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScBuildMod(Node, ScModifierNode):
     bl_idname = "ScBuildMod"
     bl_label = "Build Modifier"
+    bl_icon = 'MOD_BUILD'
     
     in_percent: FloatProperty(default=50.0, min=0.0, max=100.0, update=ScNode.update_value)
     in_reverse: BoolProperty(update=ScNode.update_value)
@@ -30,6 +31,7 @@ class ScBuildMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].frame_start = bpy.context.scene.frame_current_final - self.inputs["Percent"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].frame_duration = 100.0
         bpy.context.object.modifiers[self.prop_mod_name].use_reverse = self.inputs["Reverse"].default_value

@@ -9,6 +9,7 @@ from ...helper import remove_object
 class ScImportSvg(Node, ScNode):
     bl_idname = "ScImportSvg"
     bl_label = "Import SVG"
+    bl_icon = 'IMPORT'
 
     prop_collections: StringProperty(default="[]")
     in_name: StringProperty(default="Object", update=ScNode.update_value)
@@ -24,20 +25,23 @@ class ScImportSvg(Node, ScNode):
     
     def error_condition(self):
         return (
-            self.inputs["Name"].default_value == ""
+            super().error_condition()
+            or self.inputs["Name"].default_value == ""
             or self.inputs["File"].default_value == ""
         )
     
     def pre_execute(self):
+        super().pre_execute()
         self.prop_collections = repr(list(bpy.data.collections))
     
     def functionality(self):
+        super().functionality()
         bpy.ops.import_curve.svg(
             filepath = bpy.path.abspath(self.inputs["File"].default_value)
         )
     
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         collection = [c for c in bpy.data.collections if c not in eval(self.prop_collections)][0]
         bpy.context.view_layer.objects.active = collection.objects[0]
         self.out_curve = bpy.context.active_object
@@ -52,4 +56,5 @@ class ScImportSvg(Node, ScNode):
         return out
     
     def free(self):
+        super().free()
         self.id_data.unregister_object(self.out_curve)

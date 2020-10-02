@@ -8,6 +8,7 @@ from .._base.node_modifier import ScModifierNode
 class ScBevelMod(Node, ScModifierNode):
     bl_idname = "ScBevelMod"
     bl_label = "Bevel Modifier"
+    bl_icon = 'MOD_BEVEL'
     
     prop_vertex_group: StringProperty(update=ScNode.update_value)
     in_width: FloatProperty(name="Width", default=0.1, min=0.0, update=ScNode.update_value)
@@ -71,6 +72,7 @@ class ScBevelMod(Node, ScModifierNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.context.object.modifiers[self.prop_mod_name].vertex_group = self.prop_vertex_group
         bpy.context.object.modifiers[self.prop_mod_name].width = self.inputs["Width"].default_value
         bpy.context.object.modifiers[self.prop_mod_name].width_pct = self.inputs["Width"].default_value

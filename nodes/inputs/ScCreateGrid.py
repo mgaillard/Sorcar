@@ -8,6 +8,7 @@ from .._base.node_input import ScInputNode
 class ScCreateGrid(Node, ScInputNode):
     bl_idname = "ScCreateGrid"
     bl_label = "Create Grid"
+    bl_icon = 'MESH_GRID'
 
     in_uv: BoolProperty(default=True, update=ScNode.update_value)
     in_x: IntProperty(default=10, min=2, max=10000000, update=ScNode.update_value)
@@ -30,6 +31,7 @@ class ScCreateGrid(Node, ScInputNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.ops.mesh.primitive_grid_add(
             x_subdivisions = int(self.inputs["X Subdivisions"].default_value),
             y_subdivisions = int(self.inputs["Y Subdivisions"].default_value),

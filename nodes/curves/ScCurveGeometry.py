@@ -9,6 +9,7 @@ from ...helper import sc_poll_curve
 class ScCurveGeometry(Node, ScCurveOperatorNode):
     bl_idname = "ScCurveGeometry"
     bl_label = "Curve Geometry Properties"
+    bl_icon = 'SURFACE_NCURVE'
     
     in_depth: FloatProperty(soft_min=0.0, update=ScNode.update_value)
     in_offset: FloatProperty(update=ScNode.update_value)
@@ -39,7 +40,7 @@ class ScCurveGeometry(Node, ScCurveOperatorNode):
         self.inputs.new("ScNodeSocketString", "Bevel Mapping End").init("in_bevel_mapping_end")
     
     def error_condition(self):
-        return(
+        return (
             super().error_condition()
             or self.inputs["Extrude"].default_value < 0
             or (int(self.inputs["Resolution"].default_value) < 0 or int(self.inputs["Resolution"].default_value) > 32)
@@ -50,6 +51,7 @@ class ScCurveGeometry(Node, ScCurveOperatorNode):
         )
     
     def functionality(self):
+        super().functionality()
         self.inputs["Curve"].default_value.data.offset = self.inputs["Offset"].default_value
         self.inputs["Curve"].default_value.data.extrude = self.inputs["Extrude"].default_value
         self.inputs["Curve"].default_value.data.taper_object = self.inputs["Taper Object"].default_value

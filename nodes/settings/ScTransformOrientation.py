@@ -8,6 +8,7 @@ from .._base.node_setting import ScSettingNode
 class ScTransformOrientation(Node, ScSettingNode):
     bl_idname = "ScTransformOrientation"
     bl_label = "Transform Orientation"
+    bl_icon = 'ORIENTATION_GLOBAL'
 
     in_orientation: EnumProperty(items=[("GLOBAL", "Global", ""), ("LOCAL", "Local", ""), ("NORMAL", "Normal", ""), ("GIMBAL", "Gimbal", ""), ("CURSOR", "Cursor", "")], default="GLOBAL", update=ScNode.update_value)
 
@@ -16,4 +17,5 @@ class ScTransformOrientation(Node, ScSettingNode):
         self.inputs.new("ScNodeSocketString", "Transform Orientation").init("in_orientation", True)
     
     def functionality(self):
+        super().functionality()
         bpy.context.scene.transform_orientation_slots[0].type = self.inputs["Transform Orientation"].default_value

@@ -8,6 +8,7 @@ from .._base.node_operator import ScEditOperatorNode
 class ScAddUvSphere(Node, ScEditOperatorNode):
     bl_idname = "ScAddUvSphere"
     bl_label = "Add UV Sphere"
+    bl_icon = 'SPHERE'
 
     in_uv: BoolProperty(default=True, update=ScNode.update_value)
     in_segment: IntProperty(default=32, min=3, max=10000000, update=ScNode.update_value)
@@ -30,6 +31,7 @@ class ScAddUvSphere(Node, ScEditOperatorNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.ops.mesh.primitive_uv_sphere_add(
             segments = int(self.inputs["Segments"].default_value),
             ring_count = int(self.inputs["Rings"].default_value),

@@ -8,6 +8,7 @@ from .._base.node_base import ScNode
 class ScRaycastScene(Node, ScNode):
     bl_idname = "ScRaycastScene"
     bl_label = "Raycast (Scene)"
+    bl_icon = 'OUTLINER_OB_LIGHTPROBE'
     
     in_origin: FloatVectorProperty(update=ScNode.update_value)
     in_direction: FloatVectorProperty(update=ScNode.update_value)
@@ -26,12 +27,13 @@ class ScRaycastScene(Node, ScNode):
         self.outputs.new("ScNodeSocketObject", "Object")
     
     def error_condition(self):
-        return(
-            self.inputs["Distance"].default_value < 0.0
+        return (
+            super().error_condition()
+            or self.inputs["Distance"].default_value < 0.0
         )
     
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         ret = bpy.context.scene.ray_cast(
             bpy.context.view_layer,
             self.inputs["Origin"].default_value,

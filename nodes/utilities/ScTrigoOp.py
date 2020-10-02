@@ -8,6 +8,7 @@ from .._base.node_base import ScNode
 class ScTrigoOp(Node, ScNode):
     bl_idname = "ScTrigoOp"
     bl_label = "Trigonometric Operation"
+    bl_icon = 'FORCE_HARMONIC'
 
     in_x: FloatProperty(update=ScNode.update_value)
     in_op1: EnumProperty(name="Opertion", items=[("SIN","Sin",""), ("COS","Cos",""), ("TAN","Tan","")], default="SIN", update=ScNode.update_value)
@@ -22,12 +23,13 @@ class ScTrigoOp(Node, ScNode):
     
     def error_condition(self):
         return (
-            (not self.inputs["Operation 1"].default_value in ["SIN", "COS", "TAN"])
+            super().error_condition()
+            or (not self.inputs["Operation 1"].default_value in ["SIN", "COS", "TAN"])
             or (not self.inputs["Operation 2"].default_value in ["NONE", "HB", "INV"])
         )
     
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         if (self.inputs["Operation 1"].default_value == "SIN"):
             if (self.inputs["Operation 2"].default_value == "NONE"):
                 out["Value"] = math.sin(self.inputs["X"].default_value)

@@ -9,6 +9,7 @@ from .._base.node_base import ScNode
 class ScVector(Node, ScNode):
     bl_idname = "ScVector"
     bl_label = "Vector"
+    bl_icon = 'EMPTY_ARROWS'
 
     in_uniform: EnumProperty(items=[("NONE", "None", "-"), ("XY", "XY", "-"), ("YZ", "YZ", "-"), ("XZ", "XZ", "-"), ("XYZ", "XYZ", "-")], default="NONE", update=ScNode.update_value)
     in_x: FloatProperty(update=ScNode.update_value)
@@ -25,11 +26,12 @@ class ScVector(Node, ScNode):
     
     def error_condition(self):
         return (
-            not self.inputs["Uniform"].default_value in ["NONE", "XY", "YZ", "XZ", "XYZ"]
+            super().error_condition()
+            or (not self.inputs["Uniform"].default_value in ["NONE", "XY", "YZ", "XZ", "XYZ"])
         )
     
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         if (self.inputs["Uniform"].default_value == "NONE"):
             out["Value"] = Vector((self.inputs["X"].default_value, self.inputs["Y"].default_value, self.inputs["Z"].default_value))
         elif (self.inputs["Uniform"].default_value == "XY"):

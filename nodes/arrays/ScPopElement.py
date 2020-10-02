@@ -8,6 +8,7 @@ from .._base.node_base import ScNode
 class ScPopElement(Node, ScNode):
     bl_idname = "ScPopElement"
     bl_label = "Pop Element"
+    bl_icon = 'MOD_ARRAY'
 
     in_index: IntProperty(default=-1, update=ScNode.update_value)
 
@@ -19,7 +20,7 @@ class ScPopElement(Node, ScNode):
         self.outputs.new("ScNodeSocketUniversal", "Element")
 
     def post_execute(self):
-        out = {}
+        out = super().post_execute()
         arr = eval(self.inputs["Array"].default_value)
         try:
             elem = arr.pop(int(self.inputs["Index"].default_value))

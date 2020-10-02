@@ -8,6 +8,7 @@ from .._base.node_operator import ScEditOperatorNode
 class ScAddGrid(Node, ScEditOperatorNode):
     bl_idname = "ScAddGrid"
     bl_label = "Add Grid"
+    bl_icon = 'GRID'
 
     in_uv: BoolProperty(default=True, update=ScNode.update_value)
     in_x: IntProperty(default=10, min=2, max=10000000, update=ScNode.update_value)
@@ -30,6 +31,7 @@ class ScAddGrid(Node, ScEditOperatorNode):
         )
     
     def functionality(self):
+        super().functionality()
         bpy.ops.mesh.primitive_grid_add(
             x_subdivisions = int(self.inputs["X Subdivisions"].default_value),
             y_subdivisions = int(self.inputs["Y Subdivisions"].default_value),

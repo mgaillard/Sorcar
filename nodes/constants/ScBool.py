@@ -8,6 +8,7 @@ from .._base.node_base import ScNode
 class ScBool(Node, ScNode):
     bl_idname = "ScBool"
     bl_label = "Bool"
+    bl_icon = 'CON_ACTION'
 
     prop_bool: BoolProperty(name="Bool", update=ScNode.update_value)
 
@@ -20,4 +21,6 @@ class ScBool(Node, ScNode):
         layout.prop(self, "prop_bool")
     
     def post_execute(self):
-        return {"Value": self.prop_bool}
+        out = super().post_execute()
+        out["Value"] = self.prop_bool
+        return out

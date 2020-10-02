@@ -4,7 +4,6 @@ from bpy.props import StringProperty, BoolProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_selection import ScSelectionNode
-from ...helper import print_log
 
 class ScSelectByVertexGroup(Node, ScSelectionNode):
     bl_idname = "ScSelectByVertexGroup"
@@ -40,6 +39,7 @@ class ScSelectByVertexGroup(Node, ScSelectionNode):
                 bpy.ops.mesh.select_all(action="DESELECT")
     
     def functionality(self):
+        super().functionality()
         self.inputs["Object"].default_value.vertex_groups.active_index = self.inputs["Object"].default_value.vertex_groups[self.prop_vg].index
         if (self.inputs["Deselect"].default_value):
             bpy.ops.object.vertex_group_deselect()
