@@ -116,6 +116,7 @@ class ScNodeTree(NodeTree):
         else:
             log(self.name, None, "set_preview", "Node not found")
 
+
     def get_float_properties(self):
         float_properties = {}
         # Iterate over all ScNumber nodes of type FLOAT
@@ -126,6 +127,17 @@ class ScNodeTree(NodeTree):
 
         log(self.name, None, "get_float_properties", repr(float_properties))
         return float_properties
+
+
+    def set_float_properties(self, float_properties):
+        log(self.name, None, "set_float_properties", repr(float_properties))
+        # Iterate over all ScNumber nodes of type FLOAT
+        for node in self.nodes:
+            if type(node) == ScNumber:
+                if node.prop_type == "FLOAT" and node.name in float_properties:
+                    # Update the value in the node
+                    self.set_value(node_name=node.name, attr_name="prop_float", value=float_properties[node.name], refresh=False)
+        
 
     def get_object_boxes(self):
         bounding_boxes = {}

@@ -2,6 +2,7 @@ import bpy
 
 from bpy.types import Operator
 from ..helper import sc_poll_op
+from ..optimization.ScInverseModelingSolver import ScInverseModelingSolver
 from ..debug import log
 
 class ScInverseModeling(Operator):
@@ -14,20 +15,40 @@ class ScInverseModeling(Operator):
         """ Test if the operator can be called or not """
         return sc_poll_op(context)
 
+    def __init__(self):
+        self.original_bounding_boxes = {}
+
+    def find_taret_bounding_boxes(self, new_bounding_boxes):
+        """ Find objects that changed and output the target bounding boxes for optimization """
+        target_bounding_boxes = {}
+
+        # For each bounding box, compare to the previous box, if it's different then it's part of the target
+        for object_name in new_bounding_boxes:
+            # Find the corresponding box in the original set of bounding boxes
+            if object_name in self.original_bounding_boxes:
+                original_box = self.original_bounding_boxes[object_name]
+                new_box = new_bounding_boxes[object_name]
+                if new_box["min"] != original_box["min"] or new_box["max"] != original_box["max"]:
+                    # If the bounding box changed, we add it to the set of target bounding boxes
+                    target_bounding_boxes[object_name] = new_box
+        
+        return target_bounding_boxes
+
+
     def modal(self, context, event):
+        """ Once the user invoked the operator, this function is run until escape is pressed """
         if event.type == 'ESC':
             # List all objects and their positions before modification
             curr_tree = context.space_data.edit_tree
             if (curr_tree):
-                bouding_boxes = curr_tree.get_object_boxes()
-            '''
-            # Measure the dimensions of the object in the scene
-            object_dimensions = context.scene.objects["Object"].dimensions
-            cube_new_size = min(object_dimensions.x, object_dimensions.y, object_dimensions.z)
-            # Update the scale of the Cube node with the measured scale
-            curr_tree = context.space_data.edit_tree
-            curr_tree.set_value(node_name="Create Cube", attr_name="in_size", value=cube_new_size)
-            '''
+                # Find what is the target for optimization
+                target_bounding_boxes = self.find_taret_bounding_boxes(curr_tree.get_object_boxes())
+
+                # Optimization
+                initial_float_properties = curr_tree.get_float_properties()
+                solver = ScInverseModelingSolver(curr_tree, target_bounding_boxes, initial_float_properties)
+                solver.solve()
+
             # Finished, The operator exited after completing its action.
             return {'FINISHED'}
         # Pass Through: do nothing and pass the event on.
@@ -35,17 +56,15 @@ class ScInverseModeling(Operator):
 
     def invoke(self, context, event):
         """ Execute the operator when invoked by the user """
-        # We start by executing the current grap h
+        # We start by executing the current graph
         curr_tree = context.space_data.edit_tree
         node = curr_tree.nodes.active
         if (node):
             log("OPERATOR", curr_tree.name, self.bl_idname, "Node=\""+str(node.name)+"\"", 1)
             curr_tree.node = node.name
             curr_tree.execute_node()
-            # List all parameters in the tree (all float number nodes)
-            tree_properties = curr_tree.get_float_properties()
             # List all objects and their positions before modification
-            bouding_boxes = curr_tree.get_object_boxes()
+            self.original_bounding_boxes = curr_tree.get_object_boxes()
             # The graph is executed and the object is ready to be transformed
             context.window_manager.modal_handler_add(self)
             # We watch modifications made by the user in the modal part of the operator
