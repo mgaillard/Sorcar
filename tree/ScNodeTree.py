@@ -6,6 +6,7 @@ from bpy.types import NodeTree
 from ..nodes.constants.ScNumber import ScNumber
 from ..helper import update_each_frame, remove_object
 from ..debug import log, clear_logs, print_traceback
+from ..optimization.ScOrientedBoundingBox import ScOrientedBoundingBox
 
 class ScNodeTree(NodeTree):
     bl_idname = 'ScNodeTree'
@@ -142,11 +143,7 @@ class ScNodeTree(NodeTree):
     def get_object_boxes(self):
         bounding_boxes = {}
         for obj in self.objects:
-            center = obj.location
-            dimensions = obj.dimensions
-            min_corner = center - dimensions / 2.0
-            max_corner = center + dimensions / 2.0
-            bounding_boxes[obj.name] = {"min": min_corner, "max": max_corner}
+            bounding_boxes[obj.name] = ScOrientedBoundingBox(obj)
         
         log(self.name, None, "get_object_boxes", repr(bounding_boxes))
         return bounding_boxes

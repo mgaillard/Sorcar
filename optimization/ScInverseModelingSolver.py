@@ -37,15 +37,15 @@ class ScInverseModelingSolver:
         for object_name in bounding_boxes:
             # Find the corresponding box in the target
             if object_name in self.target_bounding_boxes:
-                target_box = self.target_bounding_boxes[object_name]
-                box = bounding_boxes[object_name]
+                # List points to match between the two objects
+                target_box_points = self.target_bounding_boxes[object_name].list_points_to_match()
+                box_points = bounding_boxes[object_name].list_points_to_match()
                 # The error is the sum of square distances between corners of the bounding boxes
-                error = error + (target_box["min"].x - box["min"].x)**2
-                error = error + (target_box["min"].y - box["min"].y)**2
-                error = error + (target_box["min"].z - box["min"].z)**2
-                error = error + (target_box["max"].x - box["max"].x)**2
-                error = error + (target_box["max"].y - box["max"].y)**2
-                error = error + (target_box["max"].z - box["max"].z)**2
+                number_points = min(len(target_box_points), len(box_points))
+                for i in range(number_points):
+                    error = error + (target_box_points[i].x - box_points[i].x)**2
+                    error = error + (target_box_points[i].y - box_points[i].y)**2
+                    error = error + (target_box_points[i].z - box_points[i].z)**2
         
         return error
 

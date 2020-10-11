@@ -18,7 +18,7 @@ class ScInverseModeling(Operator):
     def __init__(self):
         self.original_bounding_boxes = {}
 
-    def find_taret_bounding_boxes(self, new_bounding_boxes):
+    def find_target_bounding_boxes(self, new_bounding_boxes):
         """ Find objects that changed and output the target bounding boxes for optimization """
         target_bounding_boxes = {}
 
@@ -28,7 +28,7 @@ class ScInverseModeling(Operator):
             if object_name in self.original_bounding_boxes:
                 original_box = self.original_bounding_boxes[object_name]
                 new_box = new_bounding_boxes[object_name]
-                if new_box["min"] != original_box["min"] or new_box["max"] != original_box["max"]:
+                if not(original_box.is_equal(new_box)):
                     # If the bounding box changed, we add it to the set of target bounding boxes
                     target_bounding_boxes[object_name] = new_box
         
@@ -42,7 +42,7 @@ class ScInverseModeling(Operator):
             curr_tree = context.space_data.edit_tree
             if (curr_tree):
                 # Find what is the target for optimization
-                target_bounding_boxes = self.find_taret_bounding_boxes(curr_tree.get_object_boxes())
+                target_bounding_boxes = self.find_target_bounding_boxes(curr_tree.get_object_boxes())
 
                 # Optimization
                 initial_float_properties = curr_tree.get_float_properties()
