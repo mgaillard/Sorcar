@@ -11,8 +11,8 @@ class ScOrientedBoundingBox:
 
     @classmethod
     def fromObject(cls, obj):
-        center = obj.location.copy()
         matrix = obj.matrix_world
+        center = mathutils.Vector((matrix[0][3], matrix[1][3], matrix[2][3]))
         axis = [
             mathutils.Vector((matrix[0][0], matrix[1][0], matrix[2][0])).normalized(),
             mathutils.Vector((matrix[0][1], matrix[1][1], matrix[2][1])).normalized(),

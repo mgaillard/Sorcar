@@ -56,10 +56,13 @@ class ScInverseModelingSolver:
         self.curr_tree.set_float_properties(float_properties)
         self.curr_tree.execute_node()
         # Compute the error
-        return self.compute_error(self.curr_tree.get_object_boxes())
+        error = self.compute_error(self.curr_tree.get_object_boxes())
+        log("ScInverseModelingSolver", None, "cost_function", repr(error), level=1)
+        return error
 
     
     def solve(self):
         x0 = self.properties_to_flat_vector(self.initial_float_properties)
         res = minimize(self.cost_function, x0, method='nelder-mead', options={'xatol': 1e-1, 'disp': True})
         print(res.x)
+        # TODO: return the optimal parameters
