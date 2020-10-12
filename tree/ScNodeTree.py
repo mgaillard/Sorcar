@@ -143,7 +143,7 @@ class ScNodeTree(NodeTree):
     def get_object_boxes(self):
         bounding_boxes = {}
         for obj in self.objects:
-            bounding_boxes[obj.name] = ScOrientedBoundingBox(obj)
+            bounding_boxes[obj.name] = ScOrientedBoundingBox.fromObject(obj)
         
         log(self.name, None, "get_object_boxes", repr(bounding_boxes))
         return bounding_boxes
