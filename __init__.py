@@ -117,6 +117,13 @@ def import_ops(path="./"):
         log("IMPORT", "Operator", msg=i[0], level=2)
     return out
 
+def import_types(path="./"):
+    out = []
+    for i in bpy.path.module_names(path + "types"):
+        out.append(getattr(importlib.import_module(".types." + i[0], __name__), i[0]))
+        log("IMPORT", "Types", msg=i[0], level=2)
+    return out
+
 def import_sockets(path="./"):
     out = []
     for i in bpy.path.module_names(path + "sockets"):
@@ -218,12 +225,14 @@ def register():
     global all_classes, addon_keymaps, icons, path
 
     classes_ops = import_ops(path)
+    classes_types = import_types(path)
     classes_sockets = import_sockets(path)
     classes_ui = import_ui(path)
     classes_nodes = import_nodes(path)
 
     all_classes = [ScNodeTree]
     all_classes.extend(classes_ops)
+    all_classes.extend(classes_types)
     all_classes.extend(classes_sockets)
     all_classes.extend(classes_ui)
     # Try to get icon style from user prefs (default to 'WHITE')
@@ -271,7 +280,7 @@ def register():
     
     addon_updater_ops.register(bl_info)
     
-    log("REGISTERED", msg="{} operators, {} sockets, {} UI panels, {} keymaps & {} nodes ({} categories)".format(len(classes_ops), len(classes_sockets), len(classes_ui), len(addon_keymaps), total_nodes, len(classes_nodes)))
+    log("REGISTERED", msg="{} operators, {} types, {} sockets, {} UI panels, {} keymaps & {} nodes ({} categories)".format(len(classes_ops), len(classes_types), len(classes_sockets), len(classes_ui), len(addon_keymaps), total_nodes, len(classes_nodes)))
     all_classes.append(SorcarPreferences)
 
 def unregister():
