@@ -17,6 +17,7 @@ class ScNodeTree(NodeTree):
     links_hash = 0
     objects = []
     variables = {}
+    autodiff_variables = {}
 
     def update_realtime(self, context):
         if not (update_each_frame in bpy.app.handlers.frame_change_post):

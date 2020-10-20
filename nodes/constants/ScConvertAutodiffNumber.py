@@ -10,27 +10,40 @@ class ScConvertAutodiffNumber(Node, ScNode):
     bl_label = "Convert Autodiff Number"
     bl_icon = 'LINENUMBERS_ON'
 
-    prop_float: FloatProperty(update=ScNode.update_value)
+    prop_nodetree: PointerProperty(name="NodeTree", type=bpy.types.NodeTree, update=ScNode.update_value)
 
     def init(self, context):
         super().init(context)
-        self.inputs.new("ScNodeSocketAutodiffNumber", "Autodiff")
+        self.inputs.new("ScNodeSocketAutodiffNumber", "AutodiffNumber")
         self.outputs.new("ScNodeSocketNumber", "Value")
     
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
+        layout.prop(self, "prop_nodetree")
     
     def error_condition(self):
-        return super().error_condition()
+        return (
+            super().error_condition()
+            or self.prop_nodetree == None
+            or self.inputs["AutodiffNumber"].default_value == ""
+        )
     
     def pre_execute(self):
         super().pre_execute()
-        self.prop_float = self.inputs["Autodiff"].default_value.prop_float
+        # TODO: add special function in the NodeTree to get autodiff variables
+        if not hasattr(self.prop_nodetree, "autodiff_variables"):
+            self.prop_nodetree.autodiff_variables = {}
     
     def functionality(self):
         super().functionality()
+        var_name = self.inputs["AutodiffNumber"].default_value
+        # TODO: add special function in the NodeTree to test if autodiff variables is 
+        if (not var_name in self.prop_nodetree.autodiff_variables):
+            self.prop_nodetree.autodiff_variables[var_name] = 0.0
 
     def post_execute(self):
         out = super().post_execute()
-        out["Value"] = self.prop_float
+        var_name = self.inputs["AutodiffNumber"].default_value
+        # TODO: add special function in the NodeTree to set autodiff variables
+        out["Value"] = float(self.prop_nodetree.autodiff_variables[var_name])
         return out

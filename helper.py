@@ -117,7 +117,9 @@ def convert_data(data, from_type=None, to_type=None):
     log("HELPER", None, "convert_data", "Data="+str(data)+", From="+from_type+", To="+to_type, 3)
     try:
         if (to_type == "NUMBER"):
-            if (from_type == "NUMBER"):
+            if (from_type == "AUTODIFF"):
+                return False, None
+            elif (from_type == "NUMBER"):
                 val = data
             elif (from_type == "BOOL"):
                 val = float(data)
@@ -134,7 +136,9 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "SELECTION_TYPE"):
                 return False, None
         elif (to_type == "BOOL"):
-            if (from_type == "NUMBER"):
+            if (from_type == "AUTODIFF"):
+                return False, None
+            elif (from_type == "NUMBER"):
                 val = bool(data)
             elif (from_type == "BOOL"):
                 val = data
@@ -151,7 +155,9 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "SELECTION_TYPE"):
                 val = len(data) != 0
         elif (to_type == "STRING"):
-            if (from_type == "NUMBER"):
+            if (from_type == "AUTODIFF"):
+                return False, None
+            elif (from_type == "NUMBER"):
                 val = str(data)
             elif (from_type == "BOOL"):
                 val = str(data)
@@ -167,8 +173,12 @@ def convert_data(data, from_type=None, to_type=None):
                 val = data
             elif (from_type == "SELECTION_TYPE"):
                 val = str(data)
+            elif (from_type == "AUTODIFF"):
+                val = str(data)
         elif (to_type == "VECTOR"):
-            if (from_type == "NUMBER"):
+            if (from_type == "AUTODIFF"):
+                return False, None
+            elif (from_type == "NUMBER"):
                 val = (data, data, data)
             elif (from_type == "BOOL"):
                 val = (float(data), float(data), float(data))
@@ -185,7 +195,9 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "SELECTION_TYPE"):
                 val = Vector(float("VERT" in data), float("EDGE" in data), float("FACE" in data)).to_tuple()
         elif (to_type == "OBJECT"):
-            if (from_type == "NUMBER"):
+            if (from_type == "AUTODIFF"):
+                return False, None
+            elif (from_type == "NUMBER"):
                 val = bpy.data.objects[data]
             elif (from_type == "BOOL"):
                 return False, None
@@ -202,7 +214,9 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "SELECTION_TYPE"):
                 return False, None
         elif (to_type == "CURVE"):
-            if (from_type == "NUMBER"):
+            if (from_type == "AUTODIFF"):
+                return False, None
+            elif (from_type == "NUMBER"):
                 return False, None
             elif (from_type == "BOOL"):
                 return False, None
@@ -219,7 +233,9 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "SELECTION_TYPE"):
                 return False, None
         elif (to_type == "ARRAY"):
-            if (from_type == "NUMBER"):
+            if (from_type == "AUTODIFF"):
+                return False, None
+            elif (from_type == "NUMBER"):
                 val = "[" + str(data) + "]"
             elif (from_type == "BOOL"):
                 val = "[" + str(data) + "]"
@@ -236,7 +252,9 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "SELECTION_TYPE"):
                 val = str(list(data))
         elif (to_type == "SELECTION_TYPE"):
-            if (from_type == "NUMBER"):
+            if (from_type == "AUTODIFF"):
+                return False, None
+            elif (from_type == "NUMBER"):
                 return False, None
             elif (from_type == "BOOL"):
                 return False, None
@@ -265,6 +283,25 @@ def convert_data(data, from_type=None, to_type=None):
                     val.add("FACE")
             elif (from_type == "SELECTION_TYPE"):
                 val = data
+        elif (to_type == "AUTODIFF"):
+            if (from_type == "AUTODIFF"):
+                val = data
+            elif (from_type == "NUMBER"):
+                return False, None
+            elif (from_type == "BOOL"):
+                return False, None
+            elif (from_type == "STRING"):
+                val = data
+            elif (from_type == "VECTOR"):
+                return False, None
+            elif (from_type == "OBJECT"):
+                return False, None
+            elif (from_type == "CURVE"):
+                return False, None
+            elif (from_type == "ARRAY"):
+                return False, None
+            elif (from_type == "SELECTION_TYPE"):
+                return False, None
         return True, val
     except:
         return False, None
