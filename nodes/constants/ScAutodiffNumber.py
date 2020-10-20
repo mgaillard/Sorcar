@@ -2,7 +2,6 @@ import bpy
 
 from bpy.props import FloatProperty, PointerProperty
 from bpy.types import Node
-from ...types.ScAutodiffProperty import ScAutodiffProperty
 from .._base.node_base import ScNode
 
 class ScAutodiffNumber(Node, ScNode):
@@ -27,21 +26,14 @@ class ScAutodiffNumber(Node, ScNode):
             super().error_condition()
             or self.prop_nodetree == None
         )
-
-    def pre_execute(self):
-        super().pre_execute()
-        # TODO: add special function in the NodeTree to get autodiff variables
-        if not hasattr(self.prop_nodetree, "autodiff_variables"):
-            self.prop_nodetree.autodiff_variables = {}
-
+    
     def functionality(self):
         super().functionality()
-        if (not self.name in self.prop_nodetree.autodiff_variables):
-            self.prop_nodetree.autodiff_variables[self.name] = 0.0
+        if (not self.prop_nodetree.has_autodiff_variable(self.name)):
+            self.prop_nodetree.set_autodiff_variable(self.name, 0.0)
     
     def post_execute(self):
         out = super().post_execute()
-        # TODO: add special function in the NodeTree to set autodiff variables
-        self.prop_nodetree.autodiff_variables[self.name] = self.prop_float
+        self.prop_nodetree.set_autodiff_variable(self.name, self.prop_float)
         out["Value"] = self.name
         return out

@@ -85,6 +85,7 @@ class ScNodeTree(NodeTree):
         if (n):
             if (self.prop_clear_vars):
                 self.variables.clear()
+                self.autodiff_variables.clear()
             clear_logs()
             self.unregister_all_objects()
             if (hasattr(n, "execute")):
@@ -117,6 +118,22 @@ class ScNodeTree(NodeTree):
             self.execute_node();
         else:
             log(self.name, None, "set_preview", "Node not found")
+
+
+    def has_autodiff_variable(self, name):
+        return name in self.autodiff_variables
+
+
+    def get_autodiff_variable(self, name, default_value):
+        if name in self.autodiff_variables:
+            return self.autodiff_variables[name]
+        else:
+            return default_value
+
+
+    def set_autodiff_variable(self, name, value):
+        # TODO: check the type of value
+        self.autodiff_variables[name] = value
 
 
     def get_float_properties(self):

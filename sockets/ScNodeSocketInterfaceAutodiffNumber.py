@@ -2,7 +2,6 @@ import bpy
 
 from bpy.props import StringProperty
 from bpy.types import NodeSocketInterface
-from ..types.ScAutodiffProperty import ScAutodiffProperty
 from ._base.interface_base import ScNodeSocketInterface
 
 class ScNodeSocketInterfaceAutodiffNumber(NodeSocketInterface, ScNodeSocketInterface):

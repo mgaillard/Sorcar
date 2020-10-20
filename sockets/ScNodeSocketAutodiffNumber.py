@@ -2,7 +2,6 @@ import bpy
 
 from bpy.props import StringProperty
 from bpy.types import NodeSocket
-from ..types.ScAutodiffProperty import ScAutodiffProperty
 from ._base.socket_base import ScNodeSocket
 from ..nodes._base.node_base import ScNode
 
