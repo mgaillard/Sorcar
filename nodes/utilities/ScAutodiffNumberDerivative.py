@@ -4,9 +4,9 @@ from bpy.props import FloatProperty, PointerProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
 
-class ScConvertAutodiffNumber(Node, ScNode):
-    bl_idname = "ScConvertAutodiffNumber"
-    bl_label = "Convert Autodiff Number"
+class ScAutodiffNumberDerivative(Node, ScNode):
+    bl_idname = "ScAutodiffNumberDerivative"
+    bl_label = "Compute Autodiff Derivative"
     bl_icon = 'LINENUMBERS_ON'
 
     prop_nodetree: PointerProperty(name="NodeTree", type=bpy.types.NodeTree, update=ScNode.update_value)
@@ -14,7 +14,8 @@ class ScConvertAutodiffNumber(Node, ScNode):
     def init(self, context):
         super().init(context)
         self.inputs.new("ScNodeSocketAutodiffNumber", "AutodiffNumber")
-        self.outputs.new("ScNodeSocketNumber", "Value")
+        self.inputs.new("ScNodeSocketString", "Variable")
+        self.outputs.new("ScNodeSocketNumber", "Derivative")
     
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
@@ -25,16 +26,16 @@ class ScConvertAutodiffNumber(Node, ScNode):
             super().error_condition()
             or self.prop_nodetree == None
             or self.inputs["AutodiffNumber"].default_value == ""
+            or self.inputs["Variable"].default_value == ""
         )
-
-    def functionality(self):
-        super().functionality()
-        var_name = self.inputs["AutodiffNumber"].default_value
-        if (not self.prop_nodetree.has_autodiff_variable(var_name)):
-            self.prop_nodetree.set_autodiff_variable(var_name, 0.0)
 
     def post_execute(self):
         out = super().post_execute()
-        var_name = self.inputs["AutodiffNumber"].default_value
-        out["Value"] = float(self.prop_nodetree.get_autodiff_variable(var_name, 0.0))
+
+        value_name = self.inputs["AutodiffNumber"].default_value
+        derivation_variable_name = self.inputs["Variable"].default_value
+
+        value = self.prop_nodetree.autodiff_variables.get_variable(value_name)
+
+        out["Derivative"] = self.prop_nodetree.autodiff_variables.evaluate_derivative(value, derivation_variable_name)
         return out

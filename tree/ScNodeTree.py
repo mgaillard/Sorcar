@@ -5,6 +5,7 @@ from bpy.props import BoolProperty, StringProperty
 from bpy.types import NodeTree
 from ..nodes.constants.ScNumber import ScNumber
 from ..helper import update_each_frame, remove_object
+from ..optimization.ScAutodiffVariableCollection import ScAutodiffVariableCollection
 from ..debug import log, clear_logs, print_traceback
 from ..optimization.ScOrientedBoundingBox import ScOrientedBoundingBox
 
@@ -17,7 +18,7 @@ class ScNodeTree(NodeTree):
     links_hash = 0
     objects = []
     variables = {}
-    autodiff_variables = {}
+    autodiff_variables = ScAutodiffVariableCollection()
 
     def update_realtime(self, context):
         if not (update_each_frame in bpy.app.handlers.frame_change_post):
@@ -118,23 +119,7 @@ class ScNodeTree(NodeTree):
             self.execute_node();
         else:
             log(self.name, None, "set_preview", "Node not found")
-
-
-    def has_autodiff_variable(self, name):
-        return name in self.autodiff_variables
-
-
-    def get_autodiff_variable(self, name, default_value):
-        if name in self.autodiff_variables:
-            return self.autodiff_variables[name]
-        else:
-            return default_value
-
-
-    def set_autodiff_variable(self, name, value):
-        # TODO: check the type of value
-        self.autodiff_variables[name] = value
-
+            
 
     def get_float_properties(self):
         float_properties = {}

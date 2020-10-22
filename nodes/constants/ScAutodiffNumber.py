@@ -15,6 +15,7 @@ class ScAutodiffNumber(Node, ScNode):
     def init(self, context):
         super().init(context)
         self.outputs.new("ScNodeSocketAutodiffNumber", "Value")
+        self.outputs.new("ScNodeSocketString", "Name")
     
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
@@ -27,13 +28,9 @@ class ScAutodiffNumber(Node, ScNode):
             or self.prop_nodetree == None
         )
     
-    def functionality(self):
-        super().functionality()
-        if (not self.prop_nodetree.has_autodiff_variable(self.name)):
-            self.prop_nodetree.set_autodiff_variable(self.name, 0.0)
-    
     def post_execute(self):
         out = super().post_execute()
-        self.prop_nodetree.set_autodiff_variable(self.name, self.prop_float)
+        self.prop_nodetree.autodiff_variables.set_value(self.name, self.prop_float)
         out["Value"] = self.name
+        out["Name"] = self.name
         return out

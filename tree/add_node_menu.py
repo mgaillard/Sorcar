@@ -266,7 +266,6 @@ menu = [
         "ScBool",
         None,
         "ScAutodiffNumber",
-        "ScConvertAutodiffNumber",
         None,
         "ScString",
         "ScTextBlock",
@@ -338,6 +337,9 @@ menu = [
         "ScSendToSverchok",
         None,
         "ScNodeGroup",
+        None,
+        "ScAutodiffNumberConvert",
+        "ScAutodiffNumberDerivative",
     ]),
     ("settings", [
         "ScSetSelectionMode",
