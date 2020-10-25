@@ -33,6 +33,7 @@ class ScInverseModelingSolver:
     
     def evaluate_cost_function(self, x):
         error = 0.0
+        gradient = 0.0
         if self.cost_function is not None:
             # Just a reference for more concise code
             autodiff_variables = self.curr_tree.autodiff_variables
@@ -41,11 +42,11 @@ class ScInverseModelingSolver:
             for property_name in float_properties:
                 if autodiff_variables.has_variable(property_name):
                     autodiff_variables.set_value(property_name, float_properties[property_name])
-            # Evaluate the cost
+            # Evaluate the cost and the gradient
             error = autodiff_variables.evaluate_value(self.cost_function)
-            log("ScInverseModelingSolver", None, "evaluate_cost_function", repr(error), level=1)
-        return error
-
+            gradient = autodiff_variables.evaluate_gradient(self.cost_function)
+            log("ScInverseModelingSolver", None, "evaluate_cost_function", "f:{}, g:{}".format(repr(error), repr(gradient)), level=1)
+        return (error, gradient)
     
     def solve(self):
         # Execute the graph with the initial parameters
@@ -59,8 +60,8 @@ class ScInverseModelingSolver:
         self.cost_function = self.curr_tree.autodiff_variables.build_cost_function(self.target_bounding_boxes,
                                                                                    bounding_boxes)
         x0 = self.properties_to_flat_vector(self.initial_float_properties)
-        # TODO: use a constrained BFGS solver and compute the gradient with autodiff
-        res = minimize(self.evaluate_cost_function, x0, method='nelder-mead', options={'xatol': 1e-1, 'disp': True})
+        # TODO: use the "L-BFGS-B" solver and define bounds
+        res = minimize(self.evaluate_cost_function, x0, method='BFGS', jac=True, options={'gtol': 1e-6, 'disp': True})
         return self.flat_vector_to_properties(self.initial_float_properties, res.x)
 
         

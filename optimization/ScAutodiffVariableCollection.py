@@ -225,4 +225,20 @@ class ScAutodiffVariableCollection:
         result = f.call(values)
         # Convert the output
         return float(result[0])
+
+    def evaluate_gradient(self, variable):
+        """ Evaluate the gradient of a variable """
+        # TODO: check that it works for two variables and check that the order is the same as the function that calls this function
+        # List symbols in variable 
+        symbols = casadi.symvar(variable)
+        # Build the gradient
+        grad = casadi.gradient(variable, casadi.vertcat(*symbols))
+        # Assign symbols a value
+        values = self.get_symbols_values(symbols)
+        # Build the gradient function
+        f = casadi.Function('f', symbols, [grad])
+        # Evaluate the gradient with the values
+        results = f.call(values)
+        # Convert values in the results array to float
+        return [float(v) for v in results]
         
