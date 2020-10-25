@@ -30,7 +30,7 @@ class ScAutodiffNumberConvert(Node, ScNode):
     def functionality(self):
         super().functionality()
         var_name = self.inputs["AutodiffNumber"].default_value
-        if (not self.prop_nodetree.autodiff_variables.has(var_name)):
+        if (not self.prop_nodetree.autodiff_variables.has_variable(var_name)):
             self.prop_nodetree.autodiff_variables.set_value(var_name, 0.0)
 
     def post_execute(self):

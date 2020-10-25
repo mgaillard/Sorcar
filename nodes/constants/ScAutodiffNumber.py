@@ -11,6 +11,9 @@ class ScAutodiffNumber(Node, ScNode):
 
     prop_nodetree: PointerProperty(name="NodeTree", type=bpy.types.NodeTree, update=ScNode.update_value)
     prop_float: FloatProperty(name="Number", update=ScNode.update_value)
+    # TODO: add a minimum value for this variable
+    # TODO: add a maximum value for this variable
+    # TODO: add a BoolProperty to make the variable constant
 
     def init(self, context):
         super().init(context)

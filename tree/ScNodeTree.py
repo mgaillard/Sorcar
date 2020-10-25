@@ -3,7 +3,7 @@ import bpy
 
 from bpy.props import BoolProperty, StringProperty
 from bpy.types import NodeTree
-from ..nodes.constants.ScNumber import ScNumber
+from ..nodes.constants.ScAutodiffNumber import ScAutodiffNumber
 from ..helper import update_each_frame, remove_object
 from ..optimization.ScAutodiffVariableCollection import ScAutodiffVariableCollection
 from ..debug import log, clear_logs, print_traceback
@@ -123,11 +123,10 @@ class ScNodeTree(NodeTree):
 
     def get_float_properties(self):
         float_properties = {}
-        # Iterate over all ScNumber nodes of type FLOAT
+        # Iterate over all ScAutodiffNumber nodes of type FLOAT
         for node in self.nodes:
-            if type(node) == ScNumber:
-                if node.prop_type == "FLOAT":
-                    float_properties[node.name] = float(node.prop_float)
+            if type(node) == ScAutodiffNumber:
+                float_properties[node.name] = float(node.prop_float)
 
         log(self.name, None, "get_float_properties", repr(float_properties), level=2)
         return float_properties
@@ -135,10 +134,10 @@ class ScNodeTree(NodeTree):
 
     def set_float_properties(self, float_properties):
         log(self.name, None, "set_float_properties", repr(float_properties), level=2)
-        # Iterate over all ScNumber nodes of type FLOAT
+        # Iterate over all ScAutodiffNumber nodes of type FLOAT
         for node in self.nodes:
-            if type(node) == ScNumber:
-                if node.prop_type == "FLOAT" and node.name in float_properties:
+            if type(node) == ScAutodiffNumber:
+                if node.name in float_properties:
                     # Update the value in the node
                     self.set_value(node_name=node.name, attr_name="prop_float", value=float_properties[node.name], refresh=False)
         
@@ -149,4 +148,14 @@ class ScNodeTree(NodeTree):
             bounding_boxes[obj.name] = ScOrientedBoundingBox.fromObject(obj)
         
         log(self.name, None, "get_object_boxes", repr(bounding_boxes), level=2)
+        return bounding_boxes
+
+
+    def get_object_autodiff_boxes_names(self):
+        bounding_boxes = []
+        for obj in self.objects:
+            if "OBB" in obj:
+                bounding_boxes.append(obj["OBB"])
+        
+        log(self.name, None, "get_object_autodiff_boxes", repr(bounding_boxes), level=2)
         return bounding_boxes
