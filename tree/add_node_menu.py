@@ -30,7 +30,8 @@ menu = [
         "ScImportFbx",
         "ScReceiveFromSverchok",
         None,
-        "ScCreateAutodiffCube"
+        "ScCreateAutodiffCube",
+        "ScAutodiffCustomObject"
     ]),
     ("curves", [
         "ScText",

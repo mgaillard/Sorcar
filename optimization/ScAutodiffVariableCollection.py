@@ -159,11 +159,14 @@ class ScAutodiffVariableCollection:
     def has_box(self, name):
         return name in self.boxes
 
-    def set_box(self, name, extent):
+    def set_box_extent(self, name, extent):
         if name in self.boxes:
             self.boxes[name].set_extent(extent)
         else:
             self.boxes[name] = ScAutodiffOrientedBoundingBox.fromExtent(extent)
+
+    def set_box_from_constants(self, name, box):
+        self.boxes[name] = ScAutodiffOrientedBoundingBox.fromConstantOrientedBoundingBox(box)
 
     def get_box(self, name):
         if name in self.boxes:
