@@ -29,6 +29,8 @@ menu = [
         "ScCreateObject",
         "ScImportFbx",
         "ScReceiveFromSverchok",
+        None,
+        "ScCreateAutodiffCube"
     ]),
     ("curves", [
         "ScText",
@@ -60,6 +62,8 @@ menu = [
         "ScWarp",
         None,
         "ScCreateOrientation",
+        None,
+        "ScAutodiffWorldTransform"
     ]),
     ("selection", [
         "ScSelectManually",

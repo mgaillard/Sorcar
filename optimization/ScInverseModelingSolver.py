@@ -27,7 +27,10 @@ class ScInverseModelingSolver:
         flat_vector = []
         for i in range(len(property_map)):
             property_name = property_map[i]
-            flat_vector.append(float_properties[property_name])
+            if property_name in float_properties:
+                flat_vector.append(float_properties[property_name])
+            else:
+                flat_vector.append(0.0)
         return np.array(flat_vector)
     
 
@@ -36,7 +39,10 @@ class ScInverseModelingSolver:
         float_properties = {}
         for i in range(len(property_map)):
             property_name = property_map[i]
-            float_properties[property_name] = flat_vector[i]
+            if i < len(flat_vector):
+                float_properties[property_name] = flat_vector[i]
+            else:
+                float_properties[property_name] = 0.0
         return float_properties
 
     

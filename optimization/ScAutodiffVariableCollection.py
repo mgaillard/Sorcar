@@ -72,6 +72,15 @@ class ScAutodiffOrientedBoundingBox:
         extent = casadi.MX([box.extent[0], box.extent[1], box.extent[2]])
         return cls(center, axis, extent)
 
+    def set_center_x(self, center_x):
+        self.center[0] = center_x
+        
+    def set_center_y(self, center_y):
+        self.center[1] = center_y
+
+    def set_center_z(self, center_z):
+        self.center[2] = center_z
+
     def set_center(self, center):
         self.center = center
 
@@ -141,41 +150,17 @@ class ScAutodiffVariableCollection:
     def has_box(self, name):
         return name in self.boxes
 
-    def set_box(self, name, center_x, extent):
+    def set_box(self, name, extent):
         if name in self.boxes:
             self.boxes[name].set_extent(extent)
         else:
-            self.boxes[name] = ScAutodiffOrientedBoundingBox.fromCenterAndExtent(center_x, extent)
+            self.boxes[name] = ScAutodiffOrientedBoundingBox.fromExtent(extent)
 
     def get_box(self, name):
         if name in self.boxes:
-            # Convert the autodiff bounding box to a regular box
-            box = self.boxes[name]
-
-            # Convert center to a Blender vector
-            center = mathutils.Vector((
-                self.evaluate_value(box.get_center()[0]),
-                self.evaluate_value(box.get_center()[1]),
-                self.evaluate_value(box.get_center()[2])
-            ))
-            
-            # Convert axis to a Blender vectors
-            axis = []
-            for i in range(3):
-                axis.append(mathutils.Vector((
-                    self.evaluate_value(box.axis[i][0]),
-                    self.evaluate_value(box.axis[i][1]),
-                    self.evaluate_value(box.axis[i][2])
-                )))
-
-            # Convert extent to a Blender vector
-            extent = mathutils.Vector((
-                self.evaluate_value(box.get_extent()[0]),
-                self.evaluate_value(box.get_extent()[1]),
-                self.evaluate_value(box.get_extent()[2]),
-            ))
-
-            return ScOrientedBoundingBox(center, axis, extent)
+            return self.boxes[name]
+        else:
+            return None
 
     def build_cost_function(self, target_bounding_boxes, bounding_boxes):
         """ Build a cost function according to a list of target bounding boxes """
@@ -241,7 +226,6 @@ class ScAutodiffVariableCollection:
 
     def evaluate_gradient(self, variable):
         """ Evaluate the gradient of a variable """
-        # TODO: check that it works for two variables and check that the order is the same as the function that calls this function
         # List symbols in variable 
         symbols = casadi.symvar(variable)
         # Build the gradient
