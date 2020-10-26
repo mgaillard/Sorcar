@@ -134,12 +134,17 @@ class ScNodeTree(NodeTree):
 
     def set_float_properties(self, float_properties):
         log(self.name, None, "set_float_properties", repr(float_properties), level=2)
+        # Deactivate execution of the graph
+        current_node = self.node
+        self.node = None
         # Iterate over all ScAutodiffNumber nodes of type FLOAT
         for node in self.nodes:
             if type(node) == ScAutodiffNumber:
                 if node.name in float_properties:
                     # Update the value in the node
                     self.set_value(node_name=node.name, attr_name="prop_float", value=float_properties[node.name], refresh=False)
+        # Reactivate the preview node
+        self.set_preview(current_node)
         
 
     def get_object_boxes(self):

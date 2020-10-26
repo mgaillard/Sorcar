@@ -67,7 +67,6 @@ class ScInverseModelingSolver:
     def solve(self):
         # Execute the graph with the initial parameters
         self.curr_tree.set_float_properties(self.initial_float_properties)
-        self.curr_tree.execute_node()
         # Collect the name of autodiff bounding boxes
         bounding_boxes = self.curr_tree.get_object_autodiff_boxes_names()
         # TODO: check that all bounding boxes are autodiff types,
