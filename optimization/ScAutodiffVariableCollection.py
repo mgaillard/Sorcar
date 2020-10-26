@@ -49,6 +49,19 @@ class ScAutodiffOrientedBoundingBox:
         return cls(center, axis, extent)
 
     @classmethod
+    def fromCenterAndExtent(cls, center_x, extent):
+        # By default the center is the origin
+        center = casadi.MX.zeros(3, 1)
+        center[0] = center_x
+        # By default the axis are X, Y and Z
+        axis = [
+            casadi.MX([1.0, 0.0, 0.0]),
+            casadi.MX([0.0, 1.0, 0.0]),
+            casadi.MX([0.0, 0.0, 1.0])
+        ]
+        return cls(center, axis, extent)
+
+    @classmethod
     def fromConstantOrientedBoundingBox(cls, box):
         center = casadi.MX([box.center[0], box.center[1], box.center[2]])
         axis = [
@@ -128,11 +141,11 @@ class ScAutodiffVariableCollection:
     def has_box(self, name):
         return name in self.boxes
 
-    def set_box(self, name, extent):
+    def set_box(self, name, center_x, extent):
         if name in self.boxes:
             self.boxes[name].set_extent(extent)
         else:
-            self.boxes[name] = ScAutodiffOrientedBoundingBox.fromExtent(extent)
+            self.boxes[name] = ScAutodiffOrientedBoundingBox.fromCenterAndExtent(center_x, extent)
 
     def get_box(self, name):
         if name in self.boxes:
@@ -240,5 +253,9 @@ class ScAutodiffVariableCollection:
         # Evaluate the gradient with the values
         results = f.call(values)
         # Convert values in the results array to float
-        return [float(v) for v in results]
-        
+        output = {}
+        for i in range(len(symbols)):
+            variable_name = symbols[i].name()
+            variable_value = results[0][i]
+            output[variable_name] = float(variable_value)
+        return output
