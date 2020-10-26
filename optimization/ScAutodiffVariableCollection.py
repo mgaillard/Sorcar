@@ -90,6 +90,15 @@ class ScAutodiffOrientedBoundingBox:
     def get_axis(self, index):
         return self.axis[index]
 
+    def set_extent_x(self, extent_x):
+        self.extent[0] = extent_x
+        
+    def set_extent_y(self, extent_y):
+        self.extent[1] = extent_y
+
+    def set_extent_z(self, extent_z):
+        self.extent[2] = extent_z
+    
     def set_extent(self, extent):
         self.extent = extent
 

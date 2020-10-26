@@ -35,7 +35,8 @@ class ScAutodiffWorldTransform(Node, ScObjectOperatorNode):
     def functionality(self):
         super().functionality()
 
-        # Rename for convenience
+        # Rename variables for convenience
+        current_object = self.inputs["Object"].default_value
         autodiff_variables = self.prop_nodetree.autodiff_variables
 
         # Read input values
@@ -52,21 +53,28 @@ class ScAutodiffWorldTransform(Node, ScObjectOperatorNode):
         z_symbol = autodiff_variables.get_variable(z_name)
 
         if (self.inputs["Type"].default_value == 'LOCATION'):
-            current_object = self.inputs["Object"].default_value
-            # Get the bounding box if it exists
+            # Transform the object
+            current_object.location.x = x_value
+            current_object.location.y = y_value
+            current_object.location.z = z_value
+            # Get and transform the bounding box if it exists
             if "OBB" in current_object:
                 box_name = current_object["OBB"]
                 # Transform the bounding box
-                current_object.location.x = x_value
-                current_object.location.y = y_value
-                current_object.location.z = z_value
                 autodiff_variables.get_box(box_name).set_center_x(x_symbol)
                 autodiff_variables.get_box(box_name).set_center_y(y_symbol)
                 autodiff_variables.get_box(box_name).set_center_z(z_symbol)
-
-
-            # self.inputs["Object"].default_value.location = self.inputs["Value"].default_value
         # elif (self.inputs["Type"].default_value == 'ROTATION'):
             # self.inputs["Object"].default_value.rotation_euler = self.inputs["Value"].default_value
-        # elif (self.inputs["Type"].default_value == 'SCALE'):
-            # self.inputs["Object"].default_value.scale = self.inputs["Value"].default_value
+        elif (self.inputs["Type"].default_value == 'SCALE'):
+            # Transform the object
+            current_object.scale.x = x_value
+            current_object.scale.y = y_value
+            current_object.scale.z = z_value
+            # Get and transform the bounding box if it exists
+            if "OBB" in current_object:
+                box_name = current_object["OBB"]
+                # Transform the bounding box
+                autodiff_variables.get_box(box_name).set_extent_x(x_symbol / 2.0)
+                autodiff_variables.get_box(box_name).set_extent_y(y_symbol / 2.0)
+                autodiff_variables.get_box(box_name).set_extent_z(z_symbol / 2.0)
