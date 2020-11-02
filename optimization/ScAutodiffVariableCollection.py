@@ -87,6 +87,87 @@ class ScAutodiffOrientedBoundingBox:
     def get_center(self):
         return self.center
 
+    def reset_rotation(self):
+        self.axis = [
+            casadi.MX([1.0, 0.0, 0.0]),
+            casadi.MX([0.0, 1.0, 0.0]),
+            casadi.MX([0.0, 0.0, 1.0])
+        ]
+
+    def rotate_x(self, angle_x):
+        cx = casadi.cos(angle_x)
+        sx = casadi.sin(angle_x)
+
+        # Rotate box X axis
+        axis_01 = cx * self.axis[0][1] - sx * self.axis[0][2]
+        axis_02 = sx * self.axis[0][1] + cx * self.axis[0][2]
+        # Rotate box Y axis
+        axis_11 = cx * self.axis[1][1] - sx * self.axis[1][2]
+        axis_12 = sx * self.axis[1][1] + cx * self.axis[1][2]
+        # Rotate box Z axis
+        axis_21 = cx * self.axis[2][1] - sx * self.axis[2][2]
+        axis_22 = sx * self.axis[2][1] + cx * self.axis[2][2]
+
+        # Assign new values
+        self.axis[0][1] = axis_01
+        self.axis[0][2] = axis_02
+        self.axis[1][1] = axis_11
+        self.axis[1][2] = axis_12
+        self.axis[2][1] = axis_21
+        self.axis[2][2] = axis_22
+
+    def rotate_y(self, angle_y):
+        cy = casadi.cos(angle_y)
+        sy = casadi.sin(angle_y)
+
+        # Rotate box X axis
+        axis_00 =  cy * self.axis[0][0] + sy * self.axis[0][2]
+        axis_02 = -sy * self.axis[0][0] + cy * self.axis[0][2]
+        # Rotate box Y axis
+        axis_10 =  cy * self.axis[1][0] + sy * self.axis[1][2]
+        axis_12 = -sy * self.axis[1][0] + cy * self.axis[1][2]
+        # Rotate box Z axis
+        axis_20 =  cy * self.axis[2][0] + sy * self.axis[2][2]
+        axis_22 = -sy * self.axis[2][0] + cy * self.axis[2][2]
+
+        # Assign new values
+        self.axis[0][0] = axis_00
+        self.axis[0][2] = axis_02
+        self.axis[1][0] = axis_10
+        self.axis[1][2] = axis_12
+        self.axis[2][0] = axis_20
+        self.axis[2][2] = axis_22
+
+    def rotate_z(self, angle_z):
+        cz = casadi.cos(angle_z)
+        sz = casadi.sin(angle_z)
+
+        # Rotate box X axis
+        axis_00 = cz * self.axis[0][0] - sz * self.axis[0][1]
+        axis_01 = sz * self.axis[0][0] + cz * self.axis[0][1]
+        # Rotate box Y axis
+        axis_10 = cz * self.axis[1][0] - sz * self.axis[1][1]
+        axis_11 = sz * self.axis[1][0] + cz * self.axis[1][1]
+        # Rotate box Z axis
+        axis_20 = cz * self.axis[2][0] - sz * self.axis[2][1]
+        axis_21 = sz * self.axis[2][0] + cz * self.axis[2][1]
+
+        # Assign new values
+        self.axis[0][0] = axis_00
+        self.axis[0][1] = axis_01
+        self.axis[1][0] = axis_10
+        self.axis[1][1] = axis_11
+        self.axis[2][0] = axis_20
+        self.axis[2][1] = axis_21
+
+    def set_rotation(self, angle_x, angle_y, angle_z):
+        # Reset rotation
+        self.reset_rotation()
+        # Rotate each angle in order 'XYZ'
+        self.rotate_x(angle_x)
+        self.rotate_y(angle_y)
+        self.rotate_z(angle_z)
+
     def get_axis(self, index):
         return self.axis[index]
 
