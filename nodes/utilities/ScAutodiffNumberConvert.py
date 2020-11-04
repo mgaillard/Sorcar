@@ -10,7 +10,6 @@ class ScAutodiffNumberConvert(Node, ScNode):
     bl_icon = 'LINENUMBERS_ON'
 
     prop_nodetree: PointerProperty(name="NodeTree", type=bpy.types.NodeTree, update=ScNode.update_value)
-    # TODO: add a default value as a property
 
     def init(self, context):
         super().init(context)
@@ -25,20 +24,18 @@ class ScAutodiffNumberConvert(Node, ScNode):
         return (
             super().error_condition()
             or self.prop_nodetree == None
-            or self.inputs["AutodiffNumber"].default_value == ""
         )
-
-    def functionality(self):
-        super().functionality()
-        var_name = self.inputs["AutodiffNumber"].default_value
-        if (not self.prop_nodetree.autodiff_variables.has_variable(var_name)):
-            self.prop_nodetree.autodiff_variables.set_variable_value(var_name, 0.0)
 
     def post_execute(self):
         out = super().post_execute()
 
         var_name = self.inputs["AutodiffNumber"].default_value
-        variable_symbol = self.prop_nodetree.autodiff_variables.get_variable_symbol(var_name)
-        out["Value"] = float(self.prop_nodetree.autodiff_variables.evaluate_value(variable_symbol))
+
+        value = 0.0
+        if self.prop_nodetree.autodiff_variables.has_variable(var_name):
+            variable_symbol = self.prop_nodetree.autodiff_variables.get_variable_symbol(var_name)
+            value = self.prop_nodetree.autodiff_variables.evaluate_value(variable_symbol)
+        
+        out["Value"] = value
 
         return out
