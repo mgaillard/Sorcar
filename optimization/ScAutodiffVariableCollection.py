@@ -13,6 +13,7 @@ class ScAutodiffVariable:
     def __init__(self, name, value):
         # TODO: add a minimum and maximum value
         self.value = value
+        self.constant = False
         self.autodiff = casadi.MX.sym(name)
 
     def get_symbol(self):
@@ -27,6 +28,12 @@ class ScAutodiffVariable:
 
     def get_value(self):
         return self.value
+
+    def get_constness(self):
+        return self.constant
+
+    def set_constness(self, constant):
+        self.constant = constant
 
 
 class ScAutodiffOrientedBoundingBox:
@@ -237,6 +244,16 @@ class ScAutodiffVariableCollection:
         else:
             self.variables[name] = ScAutodiffVariable(name, value)
 
+    def get_variable_constness(self, name):
+        if name in self.variables:
+            return self.variables[name].get_constness()
+        else:
+            return False
+
+    def set_variable_constness(self, name, constant):
+        if name in self.variables:
+            self.variables[name].set_constness(constant)
+
     def has_box(self, name):
         return name in self.boxes
 
@@ -280,12 +297,21 @@ class ScAutodiffVariableCollection:
         
         return error
 
+    def keep_only_free_symbols(self, symbols):
+        """ Return the list of non constant symbols """
+        free_symbols = []
+        for symbol in symbols:
+            symbol_name = symbol.name()
+            if not self.get_variable_constness(symbol_name):
+                free_symbols.append(self.get_variable(symbol_name))
+        return free_symbols
+
     def get_symbols_values(self, symbols):
         """ Return values of symbols """
         values = []
         for symbol in symbols:
             symbol_name = symbol.name()
-            if symbol_name in self.variables:
+            if self.has_variable(symbol_name):
                 values.append(self.variables[symbol_name].get_value())
         return values
 
@@ -321,8 +347,10 @@ class ScAutodiffVariableCollection:
         """ Evaluate the gradient of a variable """
         # List symbols in variable 
         symbols = casadi.symvar(variable)
-        # Build the gradient
-        grad = casadi.gradient(variable, casadi.vertcat(*symbols))
+        # Only keep free variables (not the constants)
+        free_symbols = self.keep_only_free_symbols(symbols)
+        # Build the gradient with free variables
+        grad = casadi.gradient(variable, casadi.vertcat(*free_symbols))
         # Assign symbols a value
         values = self.get_symbols_values(symbols)
         # Build the gradient function
@@ -333,6 +361,8 @@ class ScAutodiffVariableCollection:
         output = {}
         for i in range(len(symbols)):
             variable_name = symbols[i].name()
-            variable_value = results[0][i]
+            variable_value = 0.0
+            if not self.get_variable_constness(variable_name):
+                variable_value = results[0][i]
             output[variable_name] = float(variable_value)
         return output
