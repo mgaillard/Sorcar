@@ -56,7 +56,7 @@ class ScInverseModelingSolver:
             float_properties = self.flat_vector_to_properties(self.property_map, x)
             for property_name in float_properties:
                 if autodiff_variables.has_variable(property_name):
-                    autodiff_variables.set_value(property_name, float_properties[property_name])
+                    autodiff_variables.set_variable_value(property_name, float_properties[property_name])
             # Evaluate the cost and the gradient
             error = autodiff_variables.evaluate_value(self.cost_function)
             gradient_properties = autodiff_variables.evaluate_gradient(self.cost_function)

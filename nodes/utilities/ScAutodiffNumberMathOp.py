@@ -35,18 +35,18 @@ class ScAutodiffNumberMathOp(Node, ScNode):
         x_name = self.inputs["X"].default_value
         y_name = self.inputs["Y"].default_value
 
-        x_value = self.prop_nodetree.autodiff_variables.get_value(x_name, 0.0)
-        y_value = self.prop_nodetree.autodiff_variables.get_value(y_name, 0.0)
+        x_value = self.prop_nodetree.autodiff_variables.get_variable_value(x_name, 0.0)
+        y_value = self.prop_nodetree.autodiff_variables.get_variable_value(y_name, 0.0)
 
-        x = self.prop_nodetree.autodiff_variables.get_variable(x_name)
-        y = self.prop_nodetree.autodiff_variables.get_variable(y_name)
+        x = self.prop_nodetree.autodiff_variables.get_variable_symbol(x_name)
+        y = self.prop_nodetree.autodiff_variables.get_variable_symbol(y_name)
 
         # Compute the operation
         result_value = x_value + y_value
         result_symbol = x + y
 
         # Register the variable in the tree
-        self.prop_nodetree.autodiff_variables.set_variable(self.name, result_symbol, result_value)
+        self.prop_nodetree.autodiff_variables.set_variable_symbol(self.name, result_symbol, result_value)
 
         # Output the name of the variable
         out["Value"] = self.name

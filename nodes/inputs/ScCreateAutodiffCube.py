@@ -36,8 +36,8 @@ class ScCreateAutodiffCube(Node, ScInputNode):
         super().functionality()
 
         size_name = self.inputs["Size"].default_value
-        size_value = self.prop_nodetree.autodiff_variables.get_value(size_name, 1.0)
-        size_symbol = self.prop_nodetree.autodiff_variables.get_variable(size_name)
+        size_value = self.prop_nodetree.autodiff_variables.get_variable_value(size_name, 1.0)
+        size_symbol = self.prop_nodetree.autodiff_variables.get_variable_symbol(size_name)
 
         bpy.ops.mesh.primitive_cube_add(
             size = size_value,

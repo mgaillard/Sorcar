@@ -219,26 +219,26 @@ class ScAutodiffVariableCollection:
     def has_variable(self, name):
         return name in self.variables
 
-    def get_variable(self, name):
+    def get_variable_symbol(self, name):
         if name in self.variables:
             return self.variables[name].get_symbol()
         else:
             return None
 
-    def set_variable(self, name, symbol, value):
+    def set_variable_symbol(self, name, symbol, value):
         if name in self.variables:
             self.variables[name].set_value(value)
         else:
             self.variables[name] = ScAutodiffVariable(name, value)
         self.variables[name].set_symbol(symbol)
 
-    def get_value(self, name, default_value):
+    def get_variable_value(self, name, default_value):
         if name in self.variables:
             return self.variables[name].get_value()
         else:
             return default_value
 
-    def set_value(self, name, value):
+    def set_variable_value(self, name, value):
         if name in self.variables:
             self.variables[name].set_value(value)
         else:
@@ -303,7 +303,7 @@ class ScAutodiffVariableCollection:
         for symbol in symbols:
             symbol_name = symbol.name()
             if not self.get_variable_constness(symbol_name):
-                free_symbols.append(self.get_variable(symbol_name))
+                free_symbols.append(symbol)
         return free_symbols
 
     def get_symbols_values(self, symbols):
@@ -359,10 +359,8 @@ class ScAutodiffVariableCollection:
         results = f.call(values)
         # Convert values in the results array to float
         output = {}
-        for i in range(len(symbols)):
-            variable_name = symbols[i].name()
-            variable_value = 0.0
-            if not self.get_variable_constness(variable_name):
-                variable_value = results[0][i]
+        for i in range(len(free_symbols)):
+            variable_name = free_symbols[i].name()
+            variable_value = results[0][i]
             output[variable_name] = float(variable_value)
         return output

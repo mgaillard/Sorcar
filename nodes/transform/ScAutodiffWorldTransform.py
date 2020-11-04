@@ -41,16 +41,16 @@ class ScAutodiffWorldTransform(Node, ScObjectOperatorNode):
 
         # Read input values
         x_name = self.inputs["X"].default_value
-        x_value = autodiff_variables.get_value(x_name, 0.0)
-        x_symbol = autodiff_variables.get_variable(x_name)
+        x_value = autodiff_variables.get_variable_value(x_name, 0.0)
+        x_symbol = autodiff_variables.get_variable_symbol(x_name)
 
         y_name = self.inputs["Y"].default_value
-        y_value = autodiff_variables.get_value(y_name, 0.0)
-        y_symbol = autodiff_variables.get_variable(y_name)
+        y_value = autodiff_variables.get_variable_value(y_name, 0.0)
+        y_symbol = autodiff_variables.get_variable_symbol(y_name)
 
         z_name = self.inputs["Z"].default_value
-        z_value = autodiff_variables.get_value(z_name, 0.0)
-        z_symbol = autodiff_variables.get_variable(z_name)
+        z_value = autodiff_variables.get_variable_value(z_name, 0.0)
+        z_symbol = autodiff_variables.get_variable_symbol(z_name)
 
         if (self.inputs["Type"].default_value == 'LOCATION'):
             # Transform the object

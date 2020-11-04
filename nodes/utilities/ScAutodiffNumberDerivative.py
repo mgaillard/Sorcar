@@ -14,7 +14,7 @@ class ScAutodiffNumberDerivative(Node, ScNode):
     def init(self, context):
         super().init(context)
         self.inputs.new("ScNodeSocketAutodiffNumber", "AutodiffNumber")
-        self.inputs.new("ScNodeSocketString", "Variable")
+        self.inputs.new("ScNodeSocketAutodiffNumber", "Variable")
         self.outputs.new("ScNodeSocketNumber", "Derivative")
     
     def draw_buttons(self, context, layout):
@@ -35,7 +35,7 @@ class ScAutodiffNumberDerivative(Node, ScNode):
         value_name = self.inputs["AutodiffNumber"].default_value
         derivation_variable_name = self.inputs["Variable"].default_value
 
-        value = self.prop_nodetree.autodiff_variables.get_variable(value_name)
+        value_symbol = self.prop_nodetree.autodiff_variables.get_variable_symbol(value_name)
 
-        out["Derivative"] = self.prop_nodetree.autodiff_variables.evaluate_derivative(value, derivation_variable_name)
+        out["Derivative"] = self.prop_nodetree.autodiff_variables.evaluate_derivative(value_symbol, derivation_variable_name)
         return out
