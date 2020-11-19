@@ -64,6 +64,8 @@ class ScInverseModeling(Operator):
             log("OPERATOR", curr_tree.name, self.bl_idname, "Node=\""+str(node.name)+"\"", 1)
             curr_tree.node = node.name
             curr_tree.execute_node()
+            # Update the view
+            context.view_layer.update()
             # List all objects and their positions before modification
             self.original_bounding_boxes = curr_tree.get_object_boxes()
             # The graph is executed and the object is ready to be transformed
