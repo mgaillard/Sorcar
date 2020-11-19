@@ -10,11 +10,18 @@ import casadi
 
 class ScAutodiffVariable:
 
-    def __init__(self, name, value):
+    def __init__(self, name, value, constant):
         # TODO: add a minimum and maximum value
+        self.constant = constant
         self.value = value
-        self.constant = False
-        self.autodiff = casadi.MX.sym(name)
+        # Difference between a constant and a symbol in casadi
+        if not self.constant:
+            self.autodiff = casadi.MX.sym(name)
+        else:
+            self.autodiff = casadi.MX([value])
+
+    def get_constness(self):
+        return self.constant
 
     def get_symbol(self):
         return self.autodiff
@@ -25,15 +32,11 @@ class ScAutodiffVariable:
     def set_value(self, value):
         # TODO: clamp according to the minimum and maximum values
         self.value = value
+        if self.constant:
+             self.autodiff = casadi.MX([value])
 
     def get_value(self):
         return self.value
-
-    def get_constness(self):
-        return self.constant
-
-    def set_constness(self, constant):
-        self.constant = constant
 
 
 class ScAutodiffOrientedBoundingBox:
@@ -78,6 +81,23 @@ class ScAutodiffOrientedBoundingBox:
         ]
         extent = casadi.MX([box.extent[0], box.extent[1], box.extent[2]])
         return cls(center, axis, extent)
+
+    @classmethod
+    def fromOrientedBoundingBoxAndAxisSystem(cls, box, axis_system):
+        # Convert to homogeneous coordinates
+        box_center_homogeneous = casadi.vertcat(box.center, casadi.MX([1.0]))
+        # Transform in homogeneous space
+        center_homogeneous = casadi.mtimes(axis_system.matrix, box_center_homogeneous)
+        # Transform back to 3D
+        center = casadi.MX(3, 1)
+        center[0] = center_homogeneous[0] / center_homogeneous[3]
+        center[1] = center_homogeneous[1] / center_homogeneous[3]
+        center[2] = center_homogeneous[2] / center_homogeneous[3]
+
+        print(center)
+        
+        # TODO
+        return cls(center, box.axis, box.extent)
 
     def set_center_x(self, center_x):
         self.center[0] = center_x
@@ -206,31 +226,59 @@ class ScAutodiffOrientedBoundingBox:
         ]
 
 
+class ScAutodiffAxisSystem:
+
+    def __init__(self, matrix):
+        self.matrix = matrix
+
+    @classmethod
+    def fromDefault(cls):
+        return cls(casadi.MX.eye(4))
+
+    @classmethod
+    def compose(cls, parent_axis_system, child_axis_system):
+        """ Compose this axis system with another axis system """
+        return cls(casadi.mtimes(parent_axis_system.matrix, child_axis_system.matrix))
+
+    def set_translation_x(self, translation_x):
+        self.matrix[0, 3] = translation_x
+        
+    def set_translation_y(self, translation_y):
+        self.matrix[1, 3] = translation_y
+
+    def set_translation_z(self, translation_z):
+        self.matrix[2, 3] = translation_z
+
+
 class ScAutodiffVariableCollection:
 
     def __init__(self):
         self.variables = {}
+        self.axis_systems = {}
         self.boxes = {}
 
     def clear(self):
         self.variables.clear()
         self.boxes.clear()
 
+    # --- Function for accessing variables ---
+
     def has_variable(self, name):
         return name in self.variables
+
+    def create_variable(self, name, constant, value):
+        self.variables[name] = ScAutodiffVariable(name, value, constant)
+
+    def set_variable_symbol(self, name, symbol, value):
+        if name in self.variables:
+            self.variables[name].set_value(value)
+            self.variables[name].set_symbol(symbol)
 
     def get_variable_symbol(self, name):
         if name in self.variables:
             return self.variables[name].get_symbol()
         else:
             return None
-
-    def set_variable_symbol(self, name, symbol, value):
-        if name in self.variables:
-            self.variables[name].set_value(value)
-        else:
-            self.variables[name] = ScAutodiffVariable(name, value)
-        self.variables[name].set_symbol(symbol)
 
     def get_variable_value(self, name, default_value):
         if name in self.variables:
@@ -241,8 +289,6 @@ class ScAutodiffVariableCollection:
     def set_variable_value(self, name, value):
         if name in self.variables:
             self.variables[name].set_value(value)
-        else:
-            self.variables[name] = ScAutodiffVariable(name, value)
 
     def get_variable_constness(self, name):
         if name in self.variables:
@@ -250,12 +296,31 @@ class ScAutodiffVariableCollection:
         else:
             return False
 
-    def set_variable_constness(self, name, constant):
-        if name in self.variables:
-            self.variables[name].set_constness(constant)
+    # --- Function for accessing axis systems ---
+
+    def has_axis_system(self, name):
+        return name in self.axis_systems
+
+    def get_axis_system(self, name):
+        if name in self.axis_systems:
+            return self.axis_systems[name]
+        else:
+            return None
+
+    def create_default_axis_system(self, name):
+        self.axis_systems[name] = ScAutodiffAxisSystem.fromDefault()
+        return self.axis_systems[name]
+
+    # --- Function for accessing boxes ---
 
     def has_box(self, name):
         return name in self.boxes
+
+    def get_box(self, name):
+        if name in self.boxes:
+            return self.boxes[name]
+        else:
+            return None
 
     def set_box_extent(self, name, extent):
         if name in self.boxes:
@@ -266,13 +331,45 @@ class ScAutodiffVariableCollection:
     def set_box_from_constants(self, name, box):
         self.boxes[name] = ScAutodiffOrientedBoundingBox.fromConstantOrientedBoundingBox(box)
 
-    def get_box(self, name):
-        if name in self.boxes:
-            return self.boxes[name]
-        else:
-            return None
+    # --- Function for optimization ---
 
-    def build_cost_function(self, target_bounding_boxes, bounding_boxes):
+    def get_parent_names(self, objects, object_name):
+        """ Give the list of names of parents of an object in reverse order """
+        # Find the object by name
+        obj = None
+        for i in range(len(objects)):
+            if objects[i].name == object_name:
+                obj = objects[i]
+
+        parent_names = []
+        
+        # If object was found
+        if obj is not None:
+            obj = obj.parent
+
+        # Iterate over parents
+        while obj is not None:
+            parent_names.append(obj.name)
+            # Get the parent
+            obj = obj.parent
+        
+        # Reverse the list of parents
+        parent_names.reverse()
+
+        return parent_names
+
+    def compose_hierarchy_axis_system(self, parent_names):
+        """ Compose axis systems according to axis system names """
+        axis_system = ScAutodiffAxisSystem.fromDefault()
+
+        for parent_name in parent_names:
+            current_axis_system = self.get_axis_system(parent_name)
+            if current_axis_system is not None:
+                axis_system = ScAutodiffAxisSystem.compose(axis_system, current_axis_system)
+
+        return axis_system
+
+    def build_cost_function(self, target_bounding_boxes, bounding_boxes, objects):
         """ Build a cost function according to a list of target bounding boxes """
         # Convert the target boxes to the autodiff bouding box format
         target_autodiff_boxes = {}
@@ -285,9 +382,18 @@ class ScAutodiffVariableCollection:
         for object_name in bounding_boxes:
             # Find the corresponding box in the target
             if (object_name in self.boxes) and (object_name in target_autodiff_boxes):
+                # Get the object bounding box and transform it according to its parents
+                object_box = self.boxes[object_name]
+                # Get parents of object in reverse order
+                hierarchy_object_names = self.get_parent_names(objects, object_name)
+                # Add the object to the list of names
+                hierarchy_object_names.append(object_name)
+                # Get the total transformation for the current object
+                axis_system = self.compose_hierarchy_axis_system(hierarchy_object_names)
+                transformed_bounding_box = ScAutodiffOrientedBoundingBox.fromOrientedBoundingBoxAndAxisSystem(object_box, axis_system)
                 # List points to match between the two objects
                 target_box_points = target_autodiff_boxes[object_name].list_points_to_match()
-                box_points = self.boxes[object_name].list_points_to_match()
+                box_points = transformed_bounding_box.list_points_to_match()
                 number_points = min(len(target_box_points), len(box_points))
                 # The error is the sum of square distances between corners of the bounding boxes
                 for i in range(number_points):

@@ -35,7 +35,6 @@ class ScAutodiffNumber(Node, ScNode):
     
     def post_execute(self):
         out = super().post_execute()
-        self.prop_nodetree.autodiff_variables.set_variable_value(self.name, self.prop_float)
-        self.prop_nodetree.autodiff_variables.set_variable_constness(self.name, self.prop_const)
+        self.prop_nodetree.autodiff_variables.create_variable(self.name, self.prop_const, self.prop_float)
         out["Value"] = self.name
         return out

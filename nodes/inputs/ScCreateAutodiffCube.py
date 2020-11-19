@@ -55,5 +55,7 @@ class ScCreateAutodiffCube(Node, ScInputNode):
 
         # Register the bounding box
         object_name = self.inputs["Name"].default_value
+        self.prop_nodetree.autodiff_variables.create_default_axis_system(object_name)
+        # TODO: create box and then scale it
         self.prop_nodetree.autodiff_variables.set_box_extent(object_name, extent_symbol)
         bpy.context.active_object["OBB"] = object_name

@@ -51,6 +51,7 @@ class ScAutodiffCustomObject(Node, ScInputNode):
 
         # Register a constant autodiff bounding box for the object
         object_name = self.out_mesh.name
+        self.prop_nodetree.autodiff_variables.create_default_axis_system(object_name)
         self.prop_nodetree.autodiff_variables.set_box_from_constants(object_name, object_bounding_box)
         self.out_mesh["OBB"] = object_name
 

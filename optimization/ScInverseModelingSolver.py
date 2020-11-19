@@ -72,8 +72,7 @@ class ScInverseModelingSolver:
         # TODO: check that all bounding boxes are autodiff types,
         #       if yes, use the autodiff solver, otherwise, use the traditional solver
         # Build the cost function and save it for later
-        self.cost_function = self.curr_tree.autodiff_variables.build_cost_function(self.target_bounding_boxes,
-                                                                                   bounding_boxes)
+        self.cost_function = self.curr_tree.autodiff_variables.build_cost_function(self.target_bounding_boxes, bounding_boxes, self.curr_tree.objects)
         x0 = self.properties_to_flat_vector(self.property_map, self.initial_float_properties)
         # TODO: use the "L-BFGS-B" solver and define bounds
         res = minimize(self.evaluate_cost_function, x0, method='BFGS', jac=True, options={'gtol': 1e-6, 'disp': True})
