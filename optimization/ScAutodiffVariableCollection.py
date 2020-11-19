@@ -249,6 +249,15 @@ class ScAutodiffAxisSystem:
     def set_translation_z(self, translation_z):
         self.matrix[2, 3] = translation_z
 
+    def set_scale_x(self, scale_x):
+        self.matrix[0, 0] = scale_x
+        
+    def set_scale_y(self, scale_y):
+        self.matrix[1, 1] = scale_y
+
+    def set_scale_y(self, scale_z):
+        self.matrix[2, 2] = scale_z
+
 
 class ScAutodiffVariableCollection:
 

@@ -60,10 +60,6 @@ class ScAutodiffWorldTransform(Node, ScObjectOperatorNode):
             # Get and transform the bounding box if it exists
             if "OBB" in current_object:
                 box_name = current_object["OBB"]
-                # Transform the bounding box
-                # autodiff_variables.get_box(box_name).set_center_x(x_symbol)
-                # autodiff_variables.get_box(box_name).set_center_y(y_symbol)
-                # autodiff_variables.get_box(box_name).set_center_z(z_symbol)
                 # Transform the axis system
                 autodiff_variables.get_axis_system(box_name).set_translation_x(x_symbol)
                 autodiff_variables.get_axis_system(box_name).set_translation_y(y_symbol)
@@ -91,6 +87,6 @@ class ScAutodiffWorldTransform(Node, ScObjectOperatorNode):
             if "OBB" in current_object:
                 box_name = current_object["OBB"]
                 # Transform the bounding box
-                autodiff_variables.get_box(box_name).set_extent_x(x_symbol * mesh_dimension_x / 2.0)
-                autodiff_variables.get_box(box_name).set_extent_y(y_symbol * mesh_dimension_y / 2.0)
-                autodiff_variables.get_box(box_name).set_extent_z(z_symbol * mesh_dimension_z / 2.0)
+                autodiff_variables.get_axis_system(box_name).set_scale_x(x_symbol * mesh_dimension_x / 2.0)
+                autodiff_variables.get_axis_system(box_name).set_scale_y(y_symbol * mesh_dimension_y / 2.0)
+                autodiff_variables.get_axis_system(box_name).set_scale_z(z_symbol * mesh_dimension_z / 2.0)
