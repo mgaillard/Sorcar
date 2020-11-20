@@ -26,6 +26,7 @@ class ScAutodiffWorldTransform(Node, ScObjectOperatorNode):
     def error_condition(self):
         return (
             super().error_condition()
+            or self.prop_nodetree == None
             or (not self.inputs["Type"].default_value in ['LOCATION', 'ROTATION', 'SCALE'])
             or self.inputs["X"].default_value == ""
             or self.inputs["Y"].default_value == ""
@@ -73,7 +74,7 @@ class ScAutodiffWorldTransform(Node, ScObjectOperatorNode):
             if "OBB" in current_object:
                 box_name = current_object["OBB"]
                 # Transform the bounding box
-                autodiff_variables.get_box(box_name).set_rotation(x_symbol, y_symbol, z_symbol)
+                autodiff_variables.get_axis_system(box_name).set_rotation(x_symbol, y_symbol, z_symbol)
         elif (self.inputs["Type"].default_value == 'SCALE'):
             # Save the mesh dimensions without transformations
             mesh_dimension_x = current_object.dimensions.x / current_object.scale.x

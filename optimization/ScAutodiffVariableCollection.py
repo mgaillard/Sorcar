@@ -93,11 +93,25 @@ class ScAutodiffOrientedBoundingBox:
         center[0] = center_homogeneous[0] / center_homogeneous[3]
         center[1] = center_homogeneous[1] / center_homogeneous[3]
         center[2] = center_homogeneous[2] / center_homogeneous[3]
-
-        print(center)
         
-        # TODO
-        return cls(center, box.axis, box.extent)
+        # Transform axis of the box
+        axis = [
+            casadi.mtimes(axis_system.matrix[0:3, 0:3], box.axis[0]),
+            casadi.mtimes(axis_system.matrix[0:3, 0:3], box.axis[1]),
+            casadi.mtimes(axis_system.matrix[0:3, 0:3], box.axis[2])
+        ]
+
+        extent = casadi.MX(3, 1)
+        extent[0] = box.extent[0] * casadi.norm_2(axis[0])
+        extent[1] = box.extent[1] * casadi.norm_2(axis[1])
+        extent[2] = box.extent[2] * casadi.norm_2(axis[2])
+        
+        # Normalize axis vectors
+        axis[0] = axis[0] / casadi.norm_2(axis[0])
+        axis[1] = axis[1] / casadi.norm_2(axis[1])
+        axis[2] = axis[2] / casadi.norm_2(axis[2])
+        
+        return cls(center, axis, extent)
 
     def set_center_x(self, center_x):
         self.center[0] = center_x
@@ -255,8 +269,58 @@ class ScAutodiffAxisSystem:
     def set_scale_y(self, scale_y):
         self.matrix[1, 1] = scale_y
 
-    def set_scale_y(self, scale_z):
+    def set_scale_z(self, scale_z):
         self.matrix[2, 2] = scale_z
+
+    def reset_rotation(self):
+        self.matrix[0:3, 0:3] = casadi.MX.eye(3)
+
+    def rotate_x(self, angle_x):
+        cx = casadi.cos(angle_x)
+        sx = casadi.sin(angle_x)
+
+        # Rotation matrix around X
+        rotation_x = casadi.MX.eye(3)
+        rotation_x[1, 1] = cx
+        rotation_x[1, 2] = -sx
+        rotation_x[2, 1] = sx
+        rotation_x[2, 2] = cx
+
+        self.matrix[0:3, 0:3] = casadi.mtimes(rotation_x, self.matrix[0:3, 0:3])
+
+    def rotate_y(self, angle_y):
+        cy = casadi.cos(angle_y)
+        sy = casadi.sin(angle_y)
+
+        # Rotation matrix around X
+        rotation_y = casadi.MX.eye(3)
+        rotation_y[0, 0] = cy
+        rotation_y[0, 2] = sy
+        rotation_y[2, 0] = -sy
+        rotation_y[2, 2] = cy
+
+        self.matrix[0:3, 0:3] = casadi.mtimes(rotation_y, self.matrix[0:3, 0:3])
+
+    def rotate_z(self, angle_z):
+        cz = casadi.cos(angle_z)
+        sz = casadi.sin(angle_z)
+
+        # Rotation matrix around X
+        rotation_z = casadi.MX.eye(3)
+        rotation_z[0, 0] = cz
+        rotation_z[0, 1] = -sz
+        rotation_z[1, 0] = sz
+        rotation_z[1, 1] = cz
+
+        self.matrix[0:3, 0:3] = casadi.mtimes(rotation_z, self.matrix[0:3, 0:3])
+
+    def set_rotation(self, angle_x, angle_y, angle_z):
+        # Reset rotation
+        self.reset_rotation()
+        # Rotate each angle in order 'XYZ'
+        self.rotate_x(angle_x)
+        self.rotate_y(angle_y)
+        self.rotate_z(angle_z)
 
 
 class ScAutodiffVariableCollection:
@@ -378,6 +442,17 @@ class ScAutodiffVariableCollection:
 
         return axis_system
 
+    def compute_transformed_bounding_box(self, objects, object_name):
+        # Get the object bounding box and transform it according to its parents
+        object_box = self.boxes[object_name]
+        # Get parents of object in reverse order
+        hierarchy_object_names = self.get_parent_names(objects, object_name)
+        # Add the object to the list of names
+        hierarchy_object_names.append(object_name)
+        # Get the total transformation for the current object
+        axis_system = self.compose_hierarchy_axis_system(hierarchy_object_names)
+        return ScAutodiffOrientedBoundingBox.fromOrientedBoundingBoxAndAxisSystem(object_box, axis_system)
+
     def build_cost_function(self, target_bounding_boxes, bounding_boxes, objects):
         """ Build a cost function according to a list of target bounding boxes """
         # Convert the target boxes to the autodiff bouding box format
@@ -392,14 +467,7 @@ class ScAutodiffVariableCollection:
             # Find the corresponding box in the target
             if (object_name in self.boxes) and (object_name in target_autodiff_boxes):
                 # Get the object bounding box and transform it according to its parents
-                object_box = self.boxes[object_name]
-                # Get parents of object in reverse order
-                hierarchy_object_names = self.get_parent_names(objects, object_name)
-                # Add the object to the list of names
-                hierarchy_object_names.append(object_name)
-                # Get the total transformation for the current object
-                axis_system = self.compose_hierarchy_axis_system(hierarchy_object_names)
-                transformed_bounding_box = ScAutodiffOrientedBoundingBox.fromOrientedBoundingBoxAndAxisSystem(object_box, axis_system)
+                transformed_bounding_box = self.compute_transformed_bounding_box(objects, object_name)
                 # List points to match between the two objects
                 target_box_points = target_autodiff_boxes[object_name].list_points_to_match()
                 box_points = transformed_bounding_box.list_points_to_match()
@@ -431,7 +499,7 @@ class ScAutodiffVariableCollection:
         return values
 
     def evaluate_value(self, variable):
-        """ Evaluate the value of a variable """
+        """ Evaluate the value of a variable return a single float """
         # List symbols in variable and assign them a value
         symbols = casadi.symvar(variable)
         values = self.get_symbols_values(symbols)
@@ -441,6 +509,21 @@ class ScAutodiffVariableCollection:
         result = f.call(values)
         # Convert the output
         return float(result[0])
+
+    def evaluate_vector(self, variable):
+        """ Evaluate the value of a variable return a list of float """
+        # List symbols in variable and assign them a value
+        symbols = casadi.symvar(variable)
+        values = self.get_symbols_values(symbols)
+        # Build the function
+        f = casadi.Function('f', symbols, [variable])
+        # Evaluate the function with the values
+        results = f.call(values)
+        # Convert values in the results array to float
+        results_float = []
+        for i in range(results[0].size1()):
+            results_float.append(float(results[0][i]))
+        return results_float
     
     def evaluate_derivative(self, variable, derivative_name):
         """ Evaluate the derivative of a variable according to another variable """
