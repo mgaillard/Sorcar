@@ -345,6 +345,7 @@ menu = [
         None,
         "ScAutodiffNumberConvert",
         "ScAutodiffNumberDerivative",
+        "ScAutodiffBoundingBoxInfo"
     ]),
     ("settings", [
         "ScSetSelectionMode",
