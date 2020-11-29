@@ -72,7 +72,11 @@ def apply_all_modifiers(obj):
     else:
         log("HELPER", None, "apply_all_modifiers", "Object not found", 3)
 
-def get_override(active=None, edit=False, selected=[], type='VIEW_3D'):
+def get_override(active=None, edit=False, selected=None, type='VIEW_3D'):
+    # By default, selected is an empty list
+    if selected is None:
+        selected = []
+
     override = bpy.context.copy()
     if (type == 'VIEW_3D'):
         override["active_object"] = active
