@@ -263,6 +263,25 @@ class ScAutodiffAxisSystem:
     def set_translation_z(self, translation_z):
         self.matrix[2, 3] = translation_z
 
+    def set_translation(self, translation_x, translation_y, translation_z):
+        self.set_translation_x(translation_x)
+        self.set_translation_y(translation_y)
+        self.set_translation_z(translation_z)
+
+    def translate_x(self, translation_x):
+        self.matrix[0, 3] = self.matrix[0, 3] + translation_x
+        
+    def translate_y(self, translation_y):
+        self.matrix[1, 3] = self.matrix[1, 3] + translation_y
+
+    def translate_z(self, translation_z):
+        self.matrix[2, 3] = self.matrix[2, 3] + translation_z
+
+    def translate(self, translation_x, translation_y, translation_z):
+        self.translate_x(translation_x)
+        self.translate_y(translation_y)
+        self.translate_z(translation_z)
+
     def set_scale_x(self, scale_x):
         self.matrix[0, 0] = scale_x
         
@@ -271,6 +290,20 @@ class ScAutodiffAxisSystem:
 
     def set_scale_z(self, scale_z):
         self.matrix[2, 2] = scale_z
+
+    def set_scale(self, scale_x, scale_y, scale_z):
+        self.set_scale_x(scale_x)
+        self.set_scale_y(scale_y)
+        self.set_scale_z(scale_z)
+
+    def scale(self, scale_x, scale_y, scale_z):
+         # Scale matrix
+        matrix_scale = casadi.MX.eye(4)
+        matrix_scale[0, 0] = scale_x
+        matrix_scale[1, 1] = scale_y
+        matrix_scale[2, 2] = scale_z
+
+        self.matrix = casadi.mtimes(matrix_scale, self.matrix)
 
     def reset_rotation(self):
         self.matrix[0:3, 0:3] = casadi.MX.eye(3)
@@ -314,13 +347,17 @@ class ScAutodiffAxisSystem:
 
         self.matrix[0:3, 0:3] = casadi.mtimes(rotation_z, self.matrix[0:3, 0:3])
 
-    def set_rotation(self, angle_x, angle_y, angle_z):
-        # Reset rotation
-        self.reset_rotation()
+    def rotate(self, angle_x, angle_y, angle_z):
         # Rotate each angle in order 'XYZ'
         self.rotate_x(angle_x)
         self.rotate_y(angle_y)
         self.rotate_z(angle_z)
+
+    def set_rotation(self, angle_x, angle_y, angle_z):
+        # Reset rotation
+        self.reset_rotation()
+        # Rotate each angle in order 'XYZ'
+        self.rotate(angle_x, angle_y, angle_z)
 
 
 class ScAutodiffVariableCollection:
@@ -498,31 +535,40 @@ class ScAutodiffVariableCollection:
                 values.append(self.variables[symbol_name].get_value())
         return values
 
-    def evaluate_value(self, variable):
-        """ Evaluate the value of a variable return a single float """
+    def evaluate(self, variable):
         # List symbols in variable and assign them a value
         symbols = casadi.symvar(variable)
         values = self.get_symbols_values(symbols)
         # Build the function
         f = casadi.Function('f', symbols, [variable])
         # Evaluate the function with the values
-        result = f.call(values)
+        return f.call(values)
+
+    def evaluate_value(self, variable):
+        """ Evaluate the value of a variable return a single float """
+        result = self.evaluate(variable)
         # Convert the output
         return float(result[0])
 
     def evaluate_vector(self, variable):
         """ Evaluate the value of a variable return a list of float """
-        # List symbols in variable and assign them a value
-        symbols = casadi.symvar(variable)
-        values = self.get_symbols_values(symbols)
-        # Build the function
-        f = casadi.Function('f', symbols, [variable])
-        # Evaluate the function with the values
-        results = f.call(values)
+        results = self.evaluate(variable)
         # Convert values in the results array to float
         results_float = []
         for i in range(results[0].size1()):
             results_float.append(float(results[0][i]))
+        return results_float
+
+    def evaluate_matrix(self, variable):
+        """ Evaluate the value of a variable return a matrix of float """
+        results = self.evaluate(variable)
+        # Convert values in the results array to float
+        results_float = []
+        for i in range(results[0].size1()):
+            row = []
+            for j in range(results[0].size2()):
+                row.append(float(results[0][i, j]))
+            results_float.append(row)
         return results_float
     
     def evaluate_derivative(self, variable, derivative_name):

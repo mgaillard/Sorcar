@@ -1,5 +1,5 @@
 import bpy
-from mathutils import Vector
+from mathutils import Vector, Matrix
 from .debug import log
 
 def sc_poll_op(context):
@@ -114,6 +114,14 @@ def update_each_frame(scene):
         if (i.bl_idname == "ScNodeTree"):
             if (i.prop_realtime):
                 i.execute_node()
+
+def convert_array_to_matrix(array):
+    """ Convert a 2D array to a Blender matrix """
+    matrix = Matrix()
+    for i in range(len(array)):
+        for j in range(len(array[i])):
+            matrix[i][j] = array[i][j]
+    return matrix
 
 def convert_data(data, from_type=None, to_type=None):
     if (data == None or from_type == None or to_type == None):

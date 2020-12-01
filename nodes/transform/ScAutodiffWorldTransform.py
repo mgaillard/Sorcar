@@ -62,9 +62,7 @@ class ScAutodiffWorldTransform(Node, ScObjectOperatorNode):
             if "OBB" in current_object:
                 box_name = current_object["OBB"]
                 # Transform the axis system
-                autodiff_variables.get_axis_system(box_name).set_translation_x(x_symbol)
-                autodiff_variables.get_axis_system(box_name).set_translation_y(y_symbol)
-                autodiff_variables.get_axis_system(box_name).set_translation_z(z_symbol)
+                autodiff_variables.get_axis_system(box_name).set_translation(x_symbol, y_symbol, z_symbol)
         elif (self.inputs["Type"].default_value == 'ROTATION'):
             # Transform the object
             current_object.rotation_euler.x = x_value
