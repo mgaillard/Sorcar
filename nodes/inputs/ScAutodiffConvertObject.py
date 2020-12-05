@@ -34,8 +34,10 @@ class ScAutodiffConvertObject(Node, ScObjectOperatorNode):
         out_mesh = bpy.context.active_object
         object_name = out_mesh.name
 
-        # Measure dimensions of the Object
+        # Apply modifications so that the base matrix is the identity
         apply_all_modifiers(out_mesh)
+        bpy.ops.object.transform_apply(location = True, rotation = True, scale = True)
+        # Measure dimensions of the Object
         object_bounding_box = ScOrientedBoundingBox.fromObject(out_mesh)
 
         # Register a constant autodiff bounding box for the object        
