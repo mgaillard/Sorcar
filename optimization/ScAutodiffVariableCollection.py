@@ -406,6 +406,9 @@ class ScAutodiffVariableCollection:
         else:
             return False
 
+    def get_temporary_const_variable(self, value):
+        return casadi.MX([value])
+
     # --- Function for accessing axis systems ---
 
     def has_axis_system(self, name):

@@ -1,7 +1,7 @@
 import bpy
 
 import mathutils
-from bpy.props import PointerProperty, EnumProperty
+from bpy.props import PointerProperty, EnumProperty, StringProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_operator import ScObjectOperatorNode
@@ -13,13 +13,16 @@ class ScAutodiffLocalTransform(Node, ScObjectOperatorNode):
 
     prop_nodetree: PointerProperty(name="NodeTree", type=bpy.types.NodeTree, update=ScNode.update_value)
     in_type: EnumProperty(items=[('TRANSLATION', 'Translation', ''), ('ROTATION', 'Rotation', ''), ('SCALE', 'Scale', '')], update=ScNode.update_value)
+    x_default_name: StringProperty(default="")
+    y_default_name: StringProperty(default="")
+    z_default_name: StringProperty(default="")
 
     def init(self, context):
         super().init(context)
         self.inputs.new("ScNodeSocketString", "Type").init("in_type", True)
-        self.inputs.new("ScNodeSocketAutodiffNumber", "X")
-        self.inputs.new("ScNodeSocketAutodiffNumber", "Y")
-        self.inputs.new("ScNodeSocketAutodiffNumber", "Z")
+        self.inputs.new("ScNodeSocketAutodiffNumber", "X").init("x_default_name", True)
+        self.inputs.new("ScNodeSocketAutodiffNumber", "Y").init("y_default_name", True)
+        self.inputs.new("ScNodeSocketAutodiffNumber", "Z").init("z_default_name", True)
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
@@ -30,9 +33,6 @@ class ScAutodiffLocalTransform(Node, ScObjectOperatorNode):
             super().error_condition()
             or self.prop_nodetree == None
             or (not self.inputs["Type"].default_value in ['TRANSLATION', 'ROTATION', 'SCALE'])
-            or self.inputs["X"].default_value == ""
-            or self.inputs["Y"].default_value == ""
-            or self.inputs["Z"].default_value == ""
         )
     
     def functionality(self):
@@ -46,9 +46,25 @@ class ScAutodiffLocalTransform(Node, ScObjectOperatorNode):
         x_name = self.inputs["X"].default_value
         y_name = self.inputs["Y"].default_value
         z_name = self.inputs["Z"].default_value
+        
+        # Get corresponding symbols
         x_symbol = autodiff_variables.get_variable_symbol(x_name)
         y_symbol = autodiff_variables.get_variable_symbol(y_name)
         z_symbol = autodiff_variables.get_variable_symbol(z_name)
+
+        # Defaut value per transform type. For scaling => 1.0, for the rest => 0
+        if (self.inputs["Type"].default_value == 'SCALE'):
+            default_value = 1.0
+        else:
+            default_value = 0.0
+
+        # If symbols are not available, replace them with a default value
+        if x_symbol is None:
+            x_symbol = autodiff_variables.get_temporary_const_variable(default_value)
+        if y_symbol is None:
+            y_symbol = autodiff_variables.get_temporary_const_variable(default_value)
+        if z_symbol is None:
+            z_symbol = autodiff_variables.get_temporary_const_variable(default_value)
 
         # Get the bounding box if it exists, then transforms it
         if "OBB" in current_object:
