@@ -40,21 +40,18 @@ class ScAutodiffNumber(Node, ScNode):
         return (
             super().error_condition()
             or self.prop_nodetree == None
-        )
-
-    def functionality(self):
-        super().functionality()
-        # If the value is bounded, clamp the value according to the minimum and maximum
-        if not self.prop_const and self.prop_bounded:
-            if self.prop_float < self.prop_float_min:
-                # Warning: assign a new value to prop_float, which re-execute the node
-                self.prop_float = self.prop_float_min
-            if self.prop_float > self.prop_float_max:
-                # Warning: assign a new value to prop_float, which re-execute the node
-                self.prop_float = self.prop_float_max
+        )        
     
     def post_execute(self):
         out = super().post_execute()
-        self.prop_nodetree.autodiff_variables.create_variable(self.name, self.prop_const, self.prop_float)
+
+        value = self.prop_float
+
+        # If the value is bounded, clamp the value according to the minimum and maximum
+        if not self.prop_const and self.prop_bounded:
+            value = max(value, self.prop_float_min)
+            value = min(value, self.prop_float_max)
+
+        self.prop_nodetree.autodiff_variables.create_variable(self.name, self.prop_const, self.prop_bounded, self.prop_float_min, self.prop_float_max, value)
         out["Value"] = self.name
         return out

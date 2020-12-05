@@ -43,10 +43,10 @@ class ScInverseModeling(Operator):
             if (curr_tree):
                 # Find what is the target for optimization
                 target_bounding_boxes = self.find_target_bounding_boxes(curr_tree.get_object_boxes())
-
                 # Optimization
                 initial_float_properties = curr_tree.get_float_properties()
-                solver = ScInverseModelingSolver(curr_tree, target_bounding_boxes, initial_float_properties)
+                float_properties_bounds = curr_tree.get_float_properties_bounds()
+                solver = ScInverseModelingSolver(curr_tree, target_bounding_boxes, initial_float_properties, float_properties_bounds)
                 best_float_properties = solver.solve()
                 curr_tree.set_float_properties(best_float_properties)
 

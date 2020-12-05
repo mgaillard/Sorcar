@@ -131,6 +131,20 @@ class ScNodeTree(NodeTree):
         log(self.name, None, "get_float_properties", repr(float_properties), level=2)
         return float_properties
 
+    def get_float_properties_bounds(self):
+        float_properties_bounds = {}
+        # Iterate over all ScAutodiffNumber nodes of type FLOAT
+        for node in self.nodes:
+            if type(node) == ScAutodiffNumber:
+                float_properties_bounds[node.name] = {
+                    'bounded': node.prop_bounded,
+                    'min': float(node.prop_float_min),
+                    'max': float(node.prop_float_max)
+                }
+
+        log(self.name, None, "get_float_properties_bounds", repr(float_properties_bounds), level=2)
+        return float_properties_bounds
+
 
     def set_float_properties(self, float_properties):
         log(self.name, None, "set_float_properties", repr(float_properties), level=2)

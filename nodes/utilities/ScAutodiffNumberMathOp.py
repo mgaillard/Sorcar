@@ -45,8 +45,8 @@ class ScAutodiffNumberMathOp(Node, ScNode):
         result_value = x_value + y_value
         result_symbol = x + y
 
-        # Register the variable in the tree
-        self.prop_nodetree.autodiff_variables.create_variable(self.name, False, result_value)
+        # Register the variable in the tree, it cannot be constant because it needs to be a symbol
+        self.prop_nodetree.autodiff_variables.create_variable(self.name, False, False, 0.0, 0.0, result_value)
         self.prop_nodetree.autodiff_variables.set_variable_symbol(self.name, result_symbol, result_value)
 
         # Output the name of the variable

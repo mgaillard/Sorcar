@@ -10,9 +10,11 @@ import casadi
 
 class ScAutodiffVariable:
 
-    def __init__(self, name, value, constant):
-        # TODO: add a minimum and maximum value
+    def __init__(self, name, constant, bounded, minimum, maximum, value):
         self.constant = constant
+        self.bounded = bounded
+        self.minimum = minimum
+        self.maximum = maximum
         self.value = value
         # Difference between a constant and a symbol in casadi
         if not self.constant:
@@ -30,8 +32,11 @@ class ScAutodiffVariable:
         self.autodiff = symbol
 
     def set_value(self, value):
-        # TODO: clamp according to the minimum and maximum values
         self.value = value
+        # Clamp according to the minimum and maximum values
+        if self.bounded:
+            self.value = max(self.value, self.minimum)
+            self.value = min(self.value, self.maximum)
         if self.constant:
              self.autodiff = casadi.MX([value])
 
@@ -376,8 +381,8 @@ class ScAutodiffVariableCollection:
     def has_variable(self, name):
         return name in self.variables
 
-    def create_variable(self, name, constant, value):
-        self.variables[name] = ScAutodiffVariable(name, value, constant)
+    def create_variable(self, name, constant, bounded, minimum, maximum, value):
+        self.variables[name] = ScAutodiffVariable(name, constant, bounded, minimum, maximum, value)
 
     def set_variable_symbol(self, name, symbol, value):
         if name in self.variables:

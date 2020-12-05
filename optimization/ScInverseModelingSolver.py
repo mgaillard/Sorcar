@@ -1,15 +1,16 @@
 import bpy
 
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize, Bounds
 from ..debug import log
 
 class ScInverseModelingSolver:
 
-    def __init__(self, curr_tree, target_bounding_boxes, initial_float_properties):
+    def __init__(self, curr_tree, target_bounding_boxes, initial_float_properties, float_properties_bounds):
         self.curr_tree = curr_tree
         self.target_bounding_boxes = target_bounding_boxes
         self.initial_float_properties = initial_float_properties
+        self.float_properties_bounds = float_properties_bounds
         self.property_map = self.create_properties_map(self.initial_float_properties)
         self.cost_function = None
 
@@ -21,6 +22,32 @@ class ScInverseModelingSolver:
             property_map.append(property_name)
         return property_map
 
+
+    @staticmethod
+    def is_problem_unconstrained(float_properties_bounds):
+        for property_name in float_properties_bounds:
+            if float_properties_bounds[property_name]["bounded"]:
+                return False
+        return True
+
+    @staticmethod
+    def properties_bounds_to_flat_vector(property_map, float_properties_bounds):
+        lb = []
+        ub = []
+        for i in range(len(property_map)):
+            property_name = property_map[i]
+            if property_name in float_properties_bounds:
+                if float_properties_bounds[property_name]["bounded"]:
+                    lb.append(float_properties_bounds[property_name]["min"])
+                    ub.append(float_properties_bounds[property_name]["max"])
+                else:
+                    lb.append(-np.inf)
+                    ub.append(np.inf)
+            else:
+                lb.append(-np.inf)
+                ub.append(np.inf)
+        return Bounds(lb, ub)
+    
 
     @staticmethod
     def properties_to_flat_vector(property_map, float_properties):
@@ -74,8 +101,13 @@ class ScInverseModelingSolver:
         # Build the cost function and save it for later
         self.cost_function = self.curr_tree.autodiff_variables.build_cost_function(self.target_bounding_boxes, bounding_boxes, self.curr_tree.objects)
         x0 = self.properties_to_flat_vector(self.property_map, self.initial_float_properties)
-        # TODO: use the "L-BFGS-B" solver and define bounds
-        res = minimize(self.evaluate_cost_function, x0, method='BFGS', jac=True, options={'gtol': 1e-6, 'disp': True})
+        if self.is_problem_unconstrained(self.float_properties_bounds):
+            # Use the "BFGS" solver on unconstrained problem
+            res = minimize(self.evaluate_cost_function, x0, method='BFGS', jac=True, options={'gtol': 1e-6, 'disp': True})
+        else:
+            # Use the "L-BFGS-B" solver and define bounds
+            bounds = self.properties_bounds_to_flat_vector(self.property_map, self.float_properties_bounds)
+            res = minimize(self.evaluate_cost_function, x0, method='L-BFGS-B', jac=True, bounds=bounds, options={'gtol': 1e-6, 'disp': True})
         return self.flat_vector_to_properties(self.property_map, res.x)
 
         
