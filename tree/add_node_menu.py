@@ -31,7 +31,8 @@ menu = [
         "ScReceiveFromSverchok",
         None,
         "ScCreateAutodiffCube",
-        "ScAutodiffCustomObject"
+        "ScAutodiffCustomObject",
+        "ScAutodiffConvertObject"
     ]),
     ("curves", [
         "ScText",
@@ -64,7 +65,8 @@ menu = [
         None,
         "ScCreateOrientation",
         None,
-        "ScAutodiffWorldTransform"
+        "ScAutodiffWorldTransform",
+        "ScAutodiffLocalTransform"
     ]),
     ("selection", [
         "ScSelectManually",
@@ -345,6 +347,7 @@ menu = [
         None,
         "ScAutodiffNumberConvert",
         "ScAutodiffNumberDerivative",
+        "ScAutodiffNumberMathOp",
         "ScAutodiffBoundingBoxInfo"
     ]),
     ("settings", [
