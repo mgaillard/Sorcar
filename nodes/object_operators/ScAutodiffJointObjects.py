@@ -1,6 +1,6 @@
 import bpy
 
-from bpy.props import PointerProperty, EnumProperty, BoolProperty
+from bpy.props import PointerProperty, EnumProperty, BoolProperty, FloatProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_operator import ScObjectOperatorNode
@@ -12,10 +12,12 @@ class ScAutodiffJointObjects(Node, ScObjectOperatorNode):
     bl_icon = 'MARKER_HLT'
 
     prop_nodetree: PointerProperty(name="NodeTree", type=bpy.types.NodeTree, update=ScNode.update_value)
+    prop_offset: FloatProperty(name="Offset", update=ScNode.update_value)
 
     def init(self, context):
         super().init(context)
         self.inputs.new("ScNodeSocketObject", "Parent")
+        self.inputs.new("ScNodeSocketNumber", "Offset").init("prop_offset", True)
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
@@ -50,9 +52,11 @@ class ScAutodiffJointObjects(Node, ScObjectOperatorNode):
             current_box_name = current_object["OBB"]
             current_box = autodiff_variables.get_box(current_box_name)
             current_extent = current_box.get_extent_z()
+            # Convert the float offset to a constant symbol
+            offset_symbol = autodiff_variables.get_temporary_const_variable(self.prop_offset)
             # Set the translation of the current object axis system
             current_axis_sytem = autodiff_variables.get_axis_system(current_box_name)
-            current_axis_sytem.set_translation_z(parent_extent + current_extent)
+            current_axis_sytem.set_translation_z(parent_extent + current_extent + offset_symbol)
             # Evaluate the local axis system for this object
             autodiff_matrix = autodiff_variables.evaluate_matrix(current_axis_sytem.matrix)                
             # Set the local matrix of the object to apply the transformation
