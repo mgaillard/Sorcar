@@ -1,8 +1,19 @@
 import bpy
 
-from bpy.props import FloatProperty, PointerProperty
+from bpy.props import StringProperty, PointerProperty, EnumProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
+
+op_items = [
+    # (identifier, name, description)
+    ("ADD", "X + Y", "Addition"),
+    ("SUB", "X - Y", "Subtraction"),
+    ("MULT", "X * Y", "Multiplication"),
+    ("DIV", "X / Y", "Division"),
+    None,
+    ("NEGX", "-X", "Negative X"),
+    ("NEGY", "-Y", "Negative Y"),
+]
 
 class ScAutodiffNumberMathOp(Node, ScNode):
     bl_idname = "ScAutodiffNumberMathOp"
@@ -10,11 +21,15 @@ class ScAutodiffNumberMathOp(Node, ScNode):
     bl_icon = 'CON_TRANSLIKE'
 
     prop_nodetree: PointerProperty(name="NodeTree", type=bpy.types.NodeTree, update=ScNode.update_value)
+    in_op: EnumProperty(name="Operation", items=op_items, default="ADD", update=ScNode.update_value)
+    x_default_name: StringProperty(default="", update=ScNode.update_value)
+    y_default_name: StringProperty(default="", update=ScNode.update_value)
 
     def init(self, context):
         super().init(context)
-        self.inputs.new("ScNodeSocketAutodiffNumber", "X")
-        self.inputs.new("ScNodeSocketAutodiffNumber", "Y")
+        self.inputs.new("ScNodeSocketAutodiffNumber", "X").init("x_default_name", True)
+        self.inputs.new("ScNodeSocketAutodiffNumber", "Y").init("y_default_name", True)
+        self.inputs.new("ScNodeSocketString", "Operation").init("in_op", True)
         self.outputs.new("ScNodeSocketAutodiffNumber", "Value")
     
     def draw_buttons(self, context, layout):
@@ -22,32 +37,62 @@ class ScAutodiffNumberMathOp(Node, ScNode):
         layout.prop(self, "prop_nodetree")
     
     def error_condition(self):
+        # TODO: check input according to the type of operation like in ScMathsOp
+        op = self.inputs["Operation"].default_value
         return (
             super().error_condition()
             or self.prop_nodetree == None
-            or self.inputs["X"].default_value == ""
-            or self.inputs["Y"].default_value == ""
+            or (not op in [i[0] for i in op_items if i])
         )
 
     def post_execute(self):
         out = super().post_execute()
 
+        # Rename variables for convenience
+        op = self.inputs["Operation"].default_value
+        autodiff_variables = self.prop_nodetree.autodiff_variables
+
+        # Read input values
         x_name = self.inputs["X"].default_value
         y_name = self.inputs["Y"].default_value
 
-        x_value = self.prop_nodetree.autodiff_variables.get_variable_value(x_name, 0.0)
-        y_value = self.prop_nodetree.autodiff_variables.get_variable_value(y_name, 0.0)
+        # Get corresponding symbols
+        x_symbol = self.prop_nodetree.autodiff_variables.get_variable_symbol(x_name)
+        y_symbol = self.prop_nodetree.autodiff_variables.get_variable_symbol(y_name)
 
-        x = self.prop_nodetree.autodiff_variables.get_variable_symbol(x_name)
-        y = self.prop_nodetree.autodiff_variables.get_variable_symbol(y_name)
+        # If symbols are not available, replace them with a default value
+        default_value = 0.0
+        if x_symbol is None:
+            x_symbol = autodiff_variables.get_temporary_const_variable(default_value)
+        if y_symbol is None:
+            y_symbol = autodiff_variables.get_temporary_const_variable(default_value)
+
+        x_value = autodiff_variables.get_variable_value(x_name, 0.0)
+        y_value = autodiff_variables.get_variable_value(y_name, 0.0)
 
         # Compute the operation
-        result_value = x_value + y_value
-        result_symbol = x + y
+        if op == 'ADD':
+            result_value = x_value + y_value
+            result_symbol = x_symbol + y_symbol
+        elif op == 'SUB':
+            result_value = x_value - y_value
+            result_symbol = x_symbol - y_symbol
+        elif op == 'MULT':
+            result_value = x_value * y_value
+            result_symbol = x_symbol * y_symbol
+        elif op == 'DIV':
+            result_value = x_value / y_value
+            result_symbol = x_symbol / y_symbol
+        elif op == 'NEGX':
+            result_value = -x_value
+            result_symbol = -x_symbol
+        elif op == 'NEGY':
+            result_value = -y_value
+            result_symbol = -y_symbol
 
         # Register the variable in the tree, it cannot be constant because it needs to be a symbol
-        self.prop_nodetree.autodiff_variables.create_variable(self.name, False, False, 0.0, 0.0, result_value)
-        self.prop_nodetree.autodiff_variables.set_variable_symbol(self.name, result_symbol, result_value)
+        autodiff_variables.create_variable(self.name, False, False, 0.0, 0.0, result_value)
+        autodiff_variables.set_variable_symbol(self.name, result_symbol, result_value)
 
         # Output the name of the variable
         out["Value"] = self.name

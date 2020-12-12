@@ -253,6 +253,24 @@ class ScAutodiffOrientedBoundingBox:
             self.center + self.extent[0] * self.axis[0] + self.extent[1] * self.axis[1] + self.extent[2] * self.axis[2]
         ]
 
+    def list_box_edges(self, offset=0):
+        return [
+            (offset + 0, offset + 1), (offset + 0, offset + 2), (offset + 0, offset + 3),
+            (offset + 1, offset + 4), (offset + 1, offset + 5), (offset + 2, offset + 4),
+            (offset + 2, offset + 6), (offset + 3, offset + 5), (offset + 3, offset + 6),
+            (offset + 4, offset + 7), (offset + 5, offset + 7), (offset + 6, offset + 7)
+        ]
+
+    def list_box_faces(self, offset=0):
+        return [
+            (offset + 0, offset + 2, offset + 4, offset + 1),
+            (offset + 0, offset + 3, offset + 6, offset + 2),
+            (offset + 1, offset + 4, offset + 7, offset + 5), 
+            (offset + 3, offset + 5, offset + 7, offset + 6),
+            (offset + 0, offset + 1, offset + 5, offset + 3),
+            (offset + 2, offset + 6, offset + 7, offset + 4)
+        ]
+
 
 class ScAutodiffAxisSystem:
 

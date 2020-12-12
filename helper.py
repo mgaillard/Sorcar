@@ -21,6 +21,20 @@ def sc_poll_curve_font(self, object):
 def sc_poll_lattice(self, object):
     return object.type == "LATTICE"
 
+def get_parent_recursively(obj):
+    current_obj = obj
+    while current_obj.parent is not None:
+        current_obj = current_obj.parent
+    return current_obj
+
+def get_children_recursively(obj):
+    all_children = [obj]
+    # If object has no children, return the object
+    for child in obj.children:
+        children = get_children_recursively(child)
+        all_children = all_children + children
+    return all_children
+
 def focus_on_object(obj, edit=False):
     if (bpy.ops.object.mode_set.poll()):
         bpy.ops.object.mode_set(mode="OBJECT")

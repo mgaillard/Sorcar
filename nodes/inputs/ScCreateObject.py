@@ -1,6 +1,7 @@
 import bpy
 
 from bpy.types import Node
+from mathutils import Vector
 from .._base.node_base import ScNode
 from .._base.node_input import ScInputNode
 
@@ -22,3 +23,4 @@ class ScCreateObject(Node, ScInputNode):
             align = "CURSOR"
         )
         bpy.context.active_object.data.from_pydata(eval(self.inputs["Vertices"].default_value), eval(self.inputs["Edges"].default_value), eval(self.inputs["Faces"].default_value))
+        bpy.context.active_object.data.update()

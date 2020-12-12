@@ -12,9 +12,9 @@ class ScAutodiffWorldTransform(Node, ScObjectOperatorNode):
 
     prop_nodetree: PointerProperty(name="NodeTree", type=bpy.types.NodeTree, update=ScNode.update_value)
     in_type: EnumProperty(items=[('LOCATION', 'Location', ''), ('ROTATION', 'Rotation', ''), ('SCALE', 'Scale', '')], update=ScNode.update_value)
-    x_default_name: StringProperty(default="")
-    y_default_name: StringProperty(default="")
-    z_default_name: StringProperty(default="")
+    x_default_name: StringProperty(default="", update=ScNode.update_value)
+    y_default_name: StringProperty(default="", update=ScNode.update_value)
+    z_default_name: StringProperty(default="", update=ScNode.update_value)
 
     def init(self, context):
         super().init(context)
