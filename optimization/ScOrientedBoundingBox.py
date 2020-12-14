@@ -10,9 +10,14 @@ class ScOrientedBoundingBox:
         self.extent = extent
 
     @classmethod
-    def fromObject(cls, obj):
+    def fromObject(cls, obj):        
         matrix = obj.matrix_world
-        center = mathutils.Vector((matrix[0][3], matrix[1][3], matrix[2][3]))
+        # Bounding box of the mesh 
+        untransformed_bbox_corners = obj.bound_box
+        bbox_corners = [matrix @ mathutils.Vector(corner) for corner in untransformed_bbox_corners]
+        # Infer the center with the average of corners
+        center = sum(bbox_corners, mathutils.Vector((0.0, 0.0, 0.0))) / 8.0
+        # center = matrix.to_translation()
         axis = [
             mathutils.Vector((matrix[0][0], matrix[1][0], matrix[2][0])).normalized(),
             mathutils.Vector((matrix[0][1], matrix[1][1], matrix[2][1])).normalized(),
