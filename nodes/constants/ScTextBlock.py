@@ -17,7 +17,7 @@ class ScTextBlock(Node, ScNode):
     
     def error_condition(self):
         return (
-            super().error_condition
+            super().error_condition()
             or self.prop_text == None
         )
     
