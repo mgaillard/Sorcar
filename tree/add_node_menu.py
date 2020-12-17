@@ -344,6 +344,7 @@ menu = [
         "ScSendToSverchok",
         None,
         "ScNodeGroup",
+        "ScOptimizeTree",
         "ScUpdateTree",
         None,
         "ScAutodiffNumberConvert",
