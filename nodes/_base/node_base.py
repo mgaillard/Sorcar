@@ -14,7 +14,14 @@ class ScNode:
     
     def update_value(self, context):
         if (hasattr(context.space_data, "edit_tree") and context.space_data.edit_tree.bl_idname == "ScNodeTree"):
-            context.space_data.edit_tree.execute_node()
+            # Check that the node that is updated is in the current tree
+            is_node_in_current_tree = False
+            for node in context.space_data.edit_tree.nodes:
+                if node == self:
+                    is_node_in_current_tree = True
+            # Only if the node is in the current tree, we update it
+            if is_node_in_current_tree:
+                context.space_data.edit_tree.execute_node()
         else:
             log(self.id_data.name, self.name, "update_value", "Context is not Sorcar node-tree")
         return None
