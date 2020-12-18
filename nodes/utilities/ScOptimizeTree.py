@@ -45,8 +45,13 @@ class ScOptimizeTree(Node, ScNode):
 
         # Setup target for optimization
         target_bounding_boxes = {}
-        # TODO: try to get the box directly from the tree
-        target_bounding_boxes[target_name] = ScOrientedBoundingBox.defaultBoundingBox()
+        # Get the current bounding box from the tree
+        tree_boxes = curr_tree.get_object_boxes()
+        if target_name in tree_boxes:
+            target_bounding_boxes[target_name] = tree_boxes[target_name]
+        else:
+            target_bounding_boxes[target_name] = ScOrientedBoundingBox.defaultBoundingBox()
+        # Modify the bounding box accroding to the input to this node
         target_bounding_boxes[target_name].center = center
 
         # Optimization
