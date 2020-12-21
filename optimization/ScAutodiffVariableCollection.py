@@ -608,7 +608,6 @@ class ScAutodiffVariableCollection:
     
     def evaluate_derivative(self, variable, derivative_name):
         """ Evaluate the derivative of a variable according to another variable """
-        # TODO: make this work for many derivatives, to compute a gradient
         # Build the gradient
         derivative_variable = self.variables[derivative_name].get_symbol()
         grad = casadi.gradient(variable, derivative_variable)
