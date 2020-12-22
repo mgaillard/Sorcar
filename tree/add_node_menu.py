@@ -343,6 +343,8 @@ menu = [
         "ScRaycastScene",
         "ScSendToSverchok",
         None,
+        "ScSinkNode",
+        None,
         "ScNodeGroup",
         "ScOptimizeTree",
         "ScUpdateTree",
