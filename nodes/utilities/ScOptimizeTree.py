@@ -81,9 +81,9 @@ class ScOptimizeTree(Node, ScNode):
             (axis_2_converted, axis_2_tuple) = convert_data(axes_2[i], from_type="STRING", to_type="VECTOR")
             if center_converted and axis_0_converted and axis_1_converted and axis_2_converted:
                 center = mathutils.Vector(center_tuple)
-                axis_0 = mathutils.Vector(axis_0_tuple)
-                axis_1 = mathutils.Vector(axis_1_tuple)
-                axis_2 = mathutils.Vector(axis_2_tuple)
+                axis_0 = mathutils.Vector(axis_0_tuple).normalized()
+                axis_1 = mathutils.Vector(axis_1_tuple).normalized()
+                axis_2 = mathutils.Vector(axis_2_tuple).normalized()
                 # Get the current bounding box from the tree
                 if target_name in tree_boxes:
                     target_bounding_boxes[target_name] = tree_boxes[target_name]
