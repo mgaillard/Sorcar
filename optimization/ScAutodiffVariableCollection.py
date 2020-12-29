@@ -467,6 +467,9 @@ class ScAutodiffVariableCollection:
         else:
             return None
 
+    def set_box(self, name, box):
+        self.boxes[name] = box
+
     def set_box_extent(self, name, extent):
         if name in self.boxes:
             self.boxes[name].set_extent(extent)
