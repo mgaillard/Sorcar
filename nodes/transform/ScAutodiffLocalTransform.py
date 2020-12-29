@@ -78,6 +78,6 @@ class ScAutodiffLocalTransform(Node, ScObjectOperatorNode):
                 autodiff_variables.get_axis_system(box_name).scale(x_symbol, y_symbol, z_symbol)
 
             # Evaluate the local axis system for this object
-            autodiff_matrix = autodiff_variables.evaluate_matrix(autodiff_variables.get_axis_system(box_name).matrix)                
+            autodiff_matrix = autodiff_variables.evaluate_matrix(autodiff_variables.get_axis_system(box_name).matrix)
             # Set the local matrix of the object to apply the transformation
             current_object.matrix_basis = convert_array_to_matrix(autodiff_matrix)
