@@ -70,7 +70,8 @@ class ScAutodiffJointObjects(Node, ScObjectOperatorNode):
             parent_extent_z = parent_box.get_extent_z()
             # Compute symbol of the bottom coordinate of the current bounding box
             current_box_name = current_object["OBB"]
-            current_box = autodiff_variables.get_box(current_box_name)
+            # Transform the bounding box according to its own axis system without taking in account the full hierarchy
+            current_box = autodiff_variables.compute_transformed_bounding_box([], current_box_name)
             current_extent_x = current_box.get_extent_x()
             current_extent_y = current_box.get_extent_y()
             current_extent_z = current_box.get_extent_z()
