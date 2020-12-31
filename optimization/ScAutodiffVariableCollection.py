@@ -130,6 +130,15 @@ class ScAutodiffOrientedBoundingBox:
     def set_center(self, center):
         self.center = center
 
+    def get_center_x(self):
+        return self.center[0]
+
+    def get_center_y(self):
+        return self.center[1]
+
+    def get_center_z(self):
+        return self.center[2]
+
     def get_center(self):
         return self.center
 

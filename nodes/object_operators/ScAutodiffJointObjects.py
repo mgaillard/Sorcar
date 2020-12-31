@@ -65,6 +65,9 @@ class ScAutodiffJointObjects(Node, ScObjectOperatorNode):
             # Compute symbol of the top coordinate of the parent bounding box
             parent_box_name = parent_object["OBB"]
             parent_box = autodiff_variables.get_box(parent_box_name)
+            parent_center_x = parent_box.get_center_x()
+            parent_center_y = parent_box.get_center_y()
+            parent_center_z = parent_box.get_center_z()
             parent_extent_x = parent_box.get_extent_x()
             parent_extent_y = parent_box.get_extent_y()
             parent_extent_z = parent_box.get_extent_z()
@@ -109,29 +112,29 @@ class ScAutodiffJointObjects(Node, ScObjectOperatorNode):
             # Set the translation of the current object axis system
             current_axis_sytem = autodiff_variables.get_axis_system(current_box_name)
             if axis == '+X':
-                current_axis_sytem.set_translation_x(parent_extent_x + current_extent_x + offset_symbol)
-                current_axis_sytem.set_translation_y(align_0_y)
-                current_axis_sytem.set_translation_z(align_1_z)
+                current_axis_sytem.set_translation_x(parent_center_x + parent_extent_x + current_extent_x + offset_symbol)
+                current_axis_sytem.set_translation_y(parent_center_y + align_0_y)
+                current_axis_sytem.set_translation_z(parent_center_z + align_1_z)
             elif axis == '-X':
-                current_axis_sytem.set_translation_x(-parent_extent_x - current_extent_x - offset_symbol)
-                current_axis_sytem.set_translation_y(align_0_y)
-                current_axis_sytem.set_translation_z(align_1_z)
+                current_axis_sytem.set_translation_x(parent_center_x - parent_extent_x - current_extent_x - offset_symbol)
+                current_axis_sytem.set_translation_y(parent_center_y + align_0_y)
+                current_axis_sytem.set_translation_z(parent_center_z + align_1_z)
             elif axis == '+Y':
-                current_axis_sytem.set_translation_y(parent_extent_y + current_extent_y + offset_symbol)
-                current_axis_sytem.set_translation_z(align_0_z)
-                current_axis_sytem.set_translation_x(align_1_x)
+                current_axis_sytem.set_translation_y(parent_center_y + parent_extent_y + current_extent_y + offset_symbol)
+                current_axis_sytem.set_translation_z(parent_center_z + align_0_z)
+                current_axis_sytem.set_translation_x(parent_center_x + align_1_x)
             elif axis == '-Y':
-                current_axis_sytem.set_translation_y(-parent_extent_y - current_extent_y - offset_symbol)
-                current_axis_sytem.set_translation_z(align_0_z)
-                current_axis_sytem.set_translation_x(align_1_x)
+                current_axis_sytem.set_translation_y(parent_center_y - parent_extent_y - current_extent_y - offset_symbol)
+                current_axis_sytem.set_translation_z(parent_center_z + align_0_z)
+                current_axis_sytem.set_translation_x(parent_center_x + align_1_x)
             elif axis == '+Z':
-                current_axis_sytem.set_translation_z(parent_extent_z + current_extent_z + offset_symbol)
-                current_axis_sytem.set_translation_x(align_0_x)
-                current_axis_sytem.set_translation_y(align_1_y)
+                current_axis_sytem.set_translation_z(parent_center_z + parent_extent_z + current_extent_z + offset_symbol)
+                current_axis_sytem.set_translation_x(parent_center_x + align_0_x)
+                current_axis_sytem.set_translation_y(parent_center_y + align_1_y)
             elif axis == '-Z':
-                current_axis_sytem.set_translation_z(-parent_extent_z - current_extent_z - offset_symbol)
-                current_axis_sytem.set_translation_x(align_0_x)
-                current_axis_sytem.set_translation_y(align_1_y)
+                current_axis_sytem.set_translation_z(parent_center_z - parent_extent_z - current_extent_z - offset_symbol)
+                current_axis_sytem.set_translation_x(parent_center_x + align_0_x)
+                current_axis_sytem.set_translation_y(parent_center_y + align_1_y)
                 
             # Evaluate the local axis system for this object
             autodiff_matrix = autodiff_variables.evaluate_matrix(current_axis_sytem.matrix)                
