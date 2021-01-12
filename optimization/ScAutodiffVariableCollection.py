@@ -88,6 +88,16 @@ class ScAutodiffOrientedBoundingBox:
         return cls(center, axis, extent)
 
     @classmethod
+    def fromOrientedBoundingBox(cls, box):
+        # Copy vectors
+        axis = [
+            box.axis[0],
+            box.axis[1],
+            box.axis[2]
+        ]
+        return cls(box.center, axis, box.extent)
+
+    @classmethod
     def fromOrientedBoundingBoxAndAxisSystem(cls, box, axis_system):
         # Convert to homogeneous coordinates
         box_center_homogeneous = casadi.vertcat(box.center, casadi.MX([1.0]))
@@ -291,6 +301,10 @@ class ScAutodiffAxisSystem:
         return cls(casadi.MX.eye(4))
 
     @classmethod
+    def fromAxisSystem(cls, axis_system):
+        return cls(axis_system.matrix)
+
+    @classmethod
     def compose(cls, parent_axis_system, child_axis_system):
         """ Compose this axis system with another axis system """
         return cls(casadi.mtimes(parent_axis_system.matrix, child_axis_system.matrix))
@@ -465,6 +479,10 @@ class ScAutodiffVariableCollection:
         self.axis_systems[name] = ScAutodiffAxisSystem.fromDefault()
         return self.axis_systems[name]
 
+    def duplicate_axis_system(self, original_name, new_name):
+        if original_name in self.axis_systems:
+            self.axis_systems[new_name] =  ScAutodiffAxisSystem.fromAxisSystem(self.axis_systems[original_name])
+
     # --- Function for accessing boxes ---
 
     def has_box(self, name):
@@ -487,6 +505,10 @@ class ScAutodiffVariableCollection:
 
     def set_box_from_constants(self, name, box):
         self.boxes[name] = ScAutodiffOrientedBoundingBox.fromConstantOrientedBoundingBox(box)
+
+    def duplicate_box(self, original_name, new_name):
+        if original_name in self.boxes:
+            self.boxes[new_name] = ScAutodiffOrientedBoundingBox.fromOrientedBoundingBox(self.boxes[original_name])
 
     # --- Function for optimization ---
 
