@@ -25,7 +25,6 @@ class ScAutodiffConvertObject(Node, ScObjectOperatorNode):
         return (
             super().error_condition()
             or self.prop_nodetree == None
-            or self.inputs["Object"].default_value == None
         )
     
     def post_execute(self):
