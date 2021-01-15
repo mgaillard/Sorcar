@@ -11,4 +11,5 @@ class ScInverseModelingPanel(Panel, ScPanel):
     def draw(self, context):
         layout = self.layout
         layout.operator("sorcar.clear_objects")
+        layout.operator("sorcar.print_statistics")
         layout.operator("sorcar.inverse_modeling")

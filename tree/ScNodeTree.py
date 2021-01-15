@@ -191,3 +191,16 @@ class ScNodeTree(NodeTree):
         
         log(self.name, None, "get_object_autodiff_boxes", repr(bounding_boxes), level=2)
         return bounding_boxes
+
+
+    def print_nodetree_stats(self):
+        number_nodes = len(self.nodes)
+        number_links = len(self.links)
+        number_parameters = len(self.get_float_properties())
+        # TODO: time execution of the graph
+        # TODO: time optimization of the graph
+        # TODO: count number of bounding boxes in the output scene
+        log(self.name, None, "print_nodetree_stats", "number of nodes " + repr(number_nodes), level=1)
+        log(self.name, None, "print_nodetree_stats", "number of links " + repr(number_links), level=1)
+        log(self.name, None, "print_nodetree_stats", "number of parameters " + repr(number_parameters), level=1)
+
