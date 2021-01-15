@@ -1,4 +1,5 @@
 import mathutils
+import copy
 
 import numpy as np
 
@@ -424,6 +425,7 @@ class ScAutodiffVariableCollection:
 
     def clear(self):
         self.variables.clear()
+        self.axis_systems.clear()
         self.boxes.clear()
 
     # --- Function for accessing variables ---
@@ -481,7 +483,7 @@ class ScAutodiffVariableCollection:
 
     def duplicate_axis_system(self, original_name, new_name):
         if original_name in self.axis_systems:
-            self.axis_systems[new_name] =  ScAutodiffAxisSystem.fromAxisSystem(self.axis_systems[original_name])
+            self.axis_systems[new_name] = copy.deepcopy(self.axis_systems[original_name])
 
     # --- Function for accessing boxes ---
 
@@ -508,7 +510,7 @@ class ScAutodiffVariableCollection:
 
     def duplicate_box(self, original_name, new_name):
         if original_name in self.boxes:
-            self.boxes[new_name] = ScAutodiffOrientedBoundingBox.fromOrientedBoundingBox(self.boxes[original_name])
+            self.boxes[new_name] = copy.deepcopy(self.boxes[original_name])
 
     # --- Function for optimization ---
 
