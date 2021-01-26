@@ -50,6 +50,8 @@ class ScInverseModeling(Operator):
                 best_float_properties = solver.solve()
                 curr_tree.set_float_properties(best_float_properties)
 
+            # Tell the user that the inverse modeling is complete
+            self.report({'INFO'}, "Inverse modeling complete")
             # Finished, The operator exited after completing its action.
             return {'FINISHED'}
         # Pass Through: do nothing and pass the event on.
@@ -70,6 +72,8 @@ class ScInverseModeling(Operator):
             self.original_bounding_boxes = curr_tree.get_object_boxes()
             # The graph is executed and the object is ready to be transformed
             context.window_manager.modal_handler_add(self)
+            # Tell the user the add-on is in inverse modeling mode
+            self.report({'INFO'}, "Inverse modeling mode activated")
             # We watch modifications made by the user in the modal part of the operator
             # Running Modal: keep the operator running with blender.
             return {"RUNNING_MODAL"}
