@@ -1,5 +1,6 @@
 import bpy
 
+from time import perf_counter
 from bpy.types import Operator
 from ..helper import sc_poll_op
 from ..debug import log
@@ -19,7 +20,11 @@ class ScExecuteNode(Operator):
         if (node):
             log("OPERATOR", curr_tree.name, self.bl_idname, "Node=\""+str(node.name)+"\"", 1)
             curr_tree.node = node.name
+            # Start the stopwatch / counter 
+            time_start = perf_counter()
             curr_tree.execute_node()
+            time_end = perf_counter()
+            log("OPERATOR", curr_tree.name, self.bl_idname, "Execution time: " + str(time_end - time_start), 1)
             return {'FINISHED'}
         else:
             log("OPERATOR", curr_tree.name, self.bl_idname, "No active node, operation cancelled", 1)

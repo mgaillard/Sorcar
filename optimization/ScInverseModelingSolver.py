@@ -1,5 +1,6 @@
 import bpy
 
+from time import perf_counter
 import numpy as np
 from scipy.optimize import minimize, Bounds
 from ..debug import log
@@ -135,6 +136,8 @@ class ScInverseModelingSolver:
             # Use the autodiff solver
             # Execute the graph with the initial parameters
             self.curr_tree.set_float_properties(self.initial_float_properties)
+            # Start measuring optimization time
+            time_start = perf_counter()
             # Collect the name of autodiff bounding boxes
             bounding_boxes = self.curr_tree.get_object_autodiff_boxes_names()
             # Build the cost function and save it for later
@@ -147,8 +150,9 @@ class ScInverseModelingSolver:
                 # Use the "L-BFGS-B" solver and define bounds
                 bounds = self.properties_bounds_to_flat_vector(self.property_map, self.float_properties_bounds)
                 res = minimize(self.evaluate_cost_function, x0, method='L-BFGS-B', jac=True, bounds=bounds, options={'gtol': 1e-6, 'disp': True})
-            return self.flat_vector_to_properties(self.property_map, res.x)
         else:
+            # Start measuring optimization time
+            time_start = perf_counter()
             # Use the traditional solver
             # The cost function cannot be built in advance because autodiff cannot be enabled
             self.autodiff_cost_function = None
@@ -160,6 +164,9 @@ class ScInverseModelingSolver:
                 # Use the "Powell" solver and define bounds
                 bounds = self.properties_bounds_to_flat_vector(self.property_map, self.float_properties_bounds)
                 res = minimize(self.evaluate_cost_function, x0, method='Powell', bounds=bounds, options={'xtol': 1e-1, 'disp': True})
-            return self.flat_vector_to_properties(self.property_map, res.x)
+        
+        time_end = perf_counter()
+        log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - time_start), level=1)
+        return self.flat_vector_to_properties(self.property_map, res.x)
 
         
