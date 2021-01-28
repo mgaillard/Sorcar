@@ -7,13 +7,15 @@ from ..debug import log
 
 class ScInverseModelingSolver:
 
-    def __init__(self, curr_tree, target_bounding_boxes, initial_float_properties, float_properties_bounds):
+    def __init__(self, curr_tree, target_bounding_boxes, initial_float_properties, float_properties_bounds, context=None):
         self.curr_tree = curr_tree
         self.target_bounding_boxes = target_bounding_boxes
         self.initial_float_properties = initial_float_properties
         self.float_properties_bounds = float_properties_bounds
         self.property_map = self.create_properties_map(self.initial_float_properties)
         self.autodiff_cost_function = None
+        self.context = context
+        self.time_start = 0
 
 
     @staticmethod
@@ -116,6 +118,8 @@ class ScInverseModelingSolver:
             float_properties = self.flat_vector_to_properties(self.property_map, x)
             self.curr_tree.set_float_properties(float_properties)
             self.curr_tree.execute_node()
+            # Update the view
+            self.context.view_layer.update()
             # Collect the name of bounding boxes
             bounding_boxes = self.curr_tree.get_object_boxes()
             # Compute the error
@@ -137,7 +141,7 @@ class ScInverseModelingSolver:
             # Execute the graph with the initial parameters
             self.curr_tree.set_float_properties(self.initial_float_properties)
             # Start measuring optimization time
-            time_start = perf_counter()
+            self.time_start = perf_counter()
             # Collect the name of autodiff bounding boxes
             bounding_boxes = self.curr_tree.get_object_autodiff_boxes_names()
             # Build the cost function and save it for later
@@ -152,7 +156,7 @@ class ScInverseModelingSolver:
                 res = minimize(self.evaluate_cost_function, x0, method='L-BFGS-B', jac=True, bounds=bounds, options={'gtol': 1e-6, 'disp': True})
         else:
             # Start measuring optimization time
-            time_start = perf_counter()
+            self.time_start = perf_counter()
             # Use the traditional solver
             # The cost function cannot be built in advance because autodiff cannot be enabled
             self.autodiff_cost_function = None
@@ -166,7 +170,7 @@ class ScInverseModelingSolver:
                 res = minimize(self.evaluate_cost_function, x0, method='Powell', bounds=bounds, options={'xtol': 1e-1, 'disp': True})
         
         time_end = perf_counter()
-        log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - time_start), level=1)
+        log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - self.time_start), level=1)
         return self.flat_vector_to_properties(self.property_map, res.x)
 
         
