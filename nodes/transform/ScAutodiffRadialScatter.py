@@ -6,7 +6,7 @@ from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_operator import ScObjectOperatorNode
 from ...helper import convert_array_to_matrix
-from ...optimization.ScAutodiffVariableCollection import ScAutodiffOrientedBoundingBox
+from ...optimization.ScAutodiffVariableCollection import ScAutodiffOrientedBoundingBox, ScAutodiffAxisSystem, ScOrientedBoundingBox
 
 from ...optimization import ScInstanceUtils as instance_utils
 
@@ -27,15 +27,11 @@ class ScAutodiffRadialScatter(Node, ScObjectOperatorNode):
 
     def init(self, context):
         super().init(context)
-        #self.inputs.new("ScNodeSocketString", "Type").init("in_type", True)
         self.inputs.new("ScNodeSocketAutodiffNumber", "Radius").init("r_default_name", True)
         self.inputs.new("ScNodeSocketAutodiffNumber", "Scale").init("s_default_name", True)
         self.inputs.new("ScNodeSocketAutodiffNumber", "Phase").init("phase_default_name", True)
         self.inputs.new("ScNodeSocketAutodiffNumber", "Number").init("n_default_name", True)
         self.node_name = str(id(self))
-
-
-        
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
@@ -49,7 +45,6 @@ class ScAutodiffRadialScatter(Node, ScObjectOperatorNode):
 
     def free(self):
         instance_utils.unregister_recursive(self.parent_object, self.id_data)
-        
     
     def functionality(self):
         super().functionality()
@@ -77,6 +72,8 @@ class ScAutodiffRadialScatter(Node, ScObjectOperatorNode):
                 "temp" : temp
             }
 
+
+
         N = dvars["Number"]["value"]
         N = int(N)
 
@@ -85,68 +82,41 @@ class ScAutodiffRadialScatter(Node, ScObjectOperatorNode):
         # 1. Create instances
         #####################
 
-        self.instances = instance_utils.create_N_instances(current_object, N)
+        self.instances = instance_utils.create_N_instances(autodiff_variables, current_object, N)
         self.parent_object = instance_utils.create_parent_group(
             "RadialScatterParent" + self.node_name,
             self.instances
         )
+
+        instance_utils.create_empty_bounding_box_for(autodiff_variables, self.parent_object)
         instance_utils.register_recursive(self.parent_object, self.id_data)
         instance_utils.hide_recursive(current_object)
         
         #####################
         # 2. Distribute instances
         #####################
-
-        orig_box = None
-
-        if "OBB" in current_object:
-            box_name = current_object["OBB"]
-            orig_box = autodiff_variables.get_box(box_name)
-        else: 
-            raise Exception("No BB box")
-        
-
+        #     
         for index, inst in enumerate(self.instances):
-            t = index / float(len(self.instances) - 1) * np.pi * 2
+            t = index / float(len(self.instances) - 1) * np.pi * 2          
             
-            inst.select_set(True)            
-            bpy.context.view_layer.objects.active = inst
+            # Modify            
+            rot = ScAutodiffAxisSystem.fromDefault()
+            rot.rotate_z(t + dvars["Phase"]["symbol"])
 
-            inst_name = "{}_node{}_instance{}".format(box_name, self.node_name, index)
+            translate = ScAutodiffAxisSystem.fromDefault()
+            translate.translate_x( -1.0 * dvars["Radius"]["symbol"])
 
-            # Create unique identifier
-            inst["OBB"] = inst_name
-            inst.name = inst_name            
+            scale = ScAutodiffAxisSystem.fromDefault()
+            scale.scale(dvars["Scale"]["symbol"],dvars["Scale"]["symbol"],dvars["Scale"]["symbol"])
 
-            #Setup new bbox and axis system
-            inst_box = ScAutodiffOrientedBoundingBox.fromOrientedBoundingBox(autodiff_variables.get_box(box_name))
-            autodiff_variables.duplicate_axis_system(box_name, inst["OBB"])
-            autodiff_variables.set_box(inst["OBB"], inst_box)
-            
-            # Modify
-            tx = casadi.sin(t + dvars["Phase"]["symbol"]) * dvars["Radius"]["symbol"]
-            ty = casadi.cos(t + dvars["Phase"]["symbol"]) * dvars["Radius"]["symbol"]
-            s = dvars["Scale"]["symbol"]
+            T = scale            
+            T.apply(rot)
+            T.apply(translate)
 
-            autodiff_variables.get_axis_system(inst["OBB"]).scale(s,s,s)
-            autodiff_variables.get_axis_system(inst["OBB"]).translate(tx,ty,0)
+            autodiff_variables.get_axis_system(inst["OBB"]).apply(T)
 
-            # Evaluate the local axis system for this object
-            autodiff_matrix = autodiff_variables.evaluate_matrix(autodiff_variables.get_axis_system(inst["OBB"]).matrix)
-            # Set the local matrix of the object to apply the transformation
-            inst.matrix_basis = convert_array_to_matrix(autodiff_matrix)
-
-            
-            inst.select_set(False)
-    
-        # Setup parent bounding box
-        parent_box = ScAutodiffOrientedBoundingBox.fromCenterAndExtent(
-            orig_box.get_center_x(), 
-            [dvars["Radius"]["symbol"] * dvars["Scale"]["symbol"],dvars["Radius"]["symbol"] * dvars["Scale"]["symbol"],orig_box.get_extent_z() * dvars["Scale"]["symbol"]]
-            )
-        autodiff_variables.create_default_axis_system(self.parent_object.name)        
-        autodiff_variables.set_box(self.parent_object.name, parent_box)         
-        self.parent_object["OBB"] = self.parent_object.name
+            Treal = convert_array_to_matrix(autodiff_variables.evaluate_matrix(T.matrix))
+            inst.matrix_local =  Treal @ inst.matrix_local
 
 
     def post_execute(self):

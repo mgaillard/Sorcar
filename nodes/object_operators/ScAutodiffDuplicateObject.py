@@ -6,6 +6,8 @@ from .._base.node_base import ScNode
 from .._base.node_operator import ScObjectOperatorNode
 from ...helper import remove_object
 
+from ...optimization import ScInstanceUtils as instance_utils
+
 class ScAutodiffDuplicateObject(Node, ScObjectOperatorNode):
     bl_idname = "ScAutodiffDuplicateObject"
     bl_label = "Autodiff Duplicate Object"
@@ -32,31 +34,16 @@ class ScAutodiffDuplicateObject(Node, ScObjectOperatorNode):
     
     def functionality(self):
         super().functionality()
-        bpy.ops.object.duplicate(
-            linked = self.inputs["Linked"].default_value
-        )
+        
+
+        current_object = self.inputs["Object"].default_value
+        autodiff_variables = self.prop_nodetree.autodiff_variables
+        self.instance = instance_utils.create_N_instances(autodiff_variables, current_object, 1)[0]
+        instance_utils.register_recursive(self.instance, self.id_data)
     
     def post_execute(self):
         out = super().post_execute()
-        
-        # Duplicate the object
-        self.out_mesh = bpy.context.active_object
-        out["Duplicate Object"] = self.out_mesh
-        self.id_data.register_object(self.out_mesh)
-
-        # Get the name of the new object
-        original_object = self.inputs["Object"].default_value
-        original_name = original_object.name
-        object_name = self.out_mesh.name
-
-        # Duplicate the bounding box
-        self.prop_nodetree.autodiff_variables.duplicate_box(original_name, object_name)
-        # Duplicate the axis system
-        self.prop_nodetree.autodiff_variables.duplicate_axis_system(original_name, object_name)
-        
-        # Assign the bounding box to the duplicated object
-        self.out_mesh["OBB"] = object_name
-
+        out["Duplicate Object"] = self.instance
         return out
     
     def free(self):

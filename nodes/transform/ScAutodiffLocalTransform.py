@@ -1,11 +1,14 @@
 import bpy
-
 import mathutils
-from bpy.props import PointerProperty, EnumProperty, StringProperty
+from bpy.props import EnumProperty, PointerProperty, StringProperty
 from bpy.types import Node
+
+from ...helper import convert_array_to_matrix
+from ...optimization.ScAutodiffVariableCollection import (
+    ScAutodiffAxisSystem, ScAutodiffOrientedBoundingBox)
 from .._base.node_base import ScNode
 from .._base.node_operator import ScObjectOperatorNode
-from ...helper import convert_array_to_matrix
+
 
 class ScAutodiffLocalTransform(Node, ScObjectOperatorNode):
     bl_idname = "ScAutodiffLocalTransform"
@@ -70,14 +73,23 @@ class ScAutodiffLocalTransform(Node, ScObjectOperatorNode):
         if "OBB" in current_object:
             box_name = current_object["OBB"]
 
+            T = ScAutodiffAxisSystem.fromDefault()
+
             if (self.inputs["Type"].default_value == 'TRANSLATION'):
-                autodiff_variables.get_axis_system(box_name).translate(x_symbol, y_symbol, z_symbol)
+                T.translate(x_symbol, y_symbol, z_symbol)
             elif (self.inputs["Type"].default_value == 'ROTATION'):
-                autodiff_variables.get_axis_system(box_name).rotate(x_symbol, y_symbol, z_symbol)
+                T.rotate(x_symbol, y_symbol, z_symbol)
             elif (self.inputs["Type"].default_value == 'SCALE'):
-                autodiff_variables.get_axis_system(box_name).scale(x_symbol, y_symbol, z_symbol)
+                T.scale(x_symbol, y_symbol, z_symbol)
+
+            autodiff_variables.get_axis_system(box_name).apply(T)
+
+            Treal = convert_array_to_matrix(autodiff_variables.evaluate_matrix(T.matrix))
+            current_object.matrix_local =  Treal @ current_object.matrix_local
+
+                #autodiff_variables.get_axis_system(box_name)
 
             # Evaluate the local axis system for this object
-            autodiff_matrix = autodiff_variables.evaluate_matrix(autodiff_variables.get_axis_system(box_name).matrix)
+            #autodiff_matrix = autodiff_variables.evaluate_matrix(autodiff_variables.get_axis_system(box_name).matrix)
             # Set the local matrix of the object to apply the transformation
-            current_object.matrix_basis = convert_array_to_matrix(autodiff_matrix)
+            #current_object.matrix_basis = convert_array_to_matrix(autodiff_matrix)

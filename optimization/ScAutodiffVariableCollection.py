@@ -1,13 +1,14 @@
-import mathutils
 import copy
+from sys import path
 
+import mathutils
 import numpy as np
 
 from .ScOrientedBoundingBox import ScOrientedBoundingBox
 
-from sys import path
 path.append(r"casadi-py37-v3.5.5")
 import casadi
+
 
 class ScAutodiffVariable:
 
@@ -309,6 +310,9 @@ class ScAutodiffAxisSystem:
     def compose(cls, parent_axis_system, child_axis_system):
         """ Compose this axis system with another axis system """
         return cls(casadi.mtimes(parent_axis_system.matrix, child_axis_system.matrix))
+
+    def apply(self, other_axis_system):
+        self.matrix = casadi.mtimes(self.matrix, other_axis_system.matrix)
 
     def set_translation_x(self, translation_x):
         self.matrix[0, 3] = translation_x

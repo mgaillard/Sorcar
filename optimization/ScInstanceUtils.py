@@ -1,5 +1,7 @@
 import bpy
 
+from .ScAutodiffVariableCollection import ScAutodiffOrientedBoundingBox, ScOrientedBoundingBox
+
 def deselect_all():
     bpy.context.view_layer.objects.active = None
     for obj in bpy.context.selected_objects:
@@ -23,7 +25,22 @@ def deselect_recursive(obj):
         deselect_recursive(child)
 
 
-def create_N_instances(current_object, N):
+def duplicate_autodiff_vars_recursive(autodiff_variables, obj):
+    old_identifer = obj["OBB"]
+    new_identifer = obj.name
+
+    #Create a new box from the old one
+    autodiff_variables.duplicate_box(old_identifer, new_identifer)        
+    autodiff_variables.duplicate_axis_system(old_identifer, new_identifer)
+
+    #Update OBB name, in case obj has .001 etc. suffix
+    obj["OBB"] = new_identifer
+
+    for child in obj.children:
+        duplicate_autodiff_vars_recursive(autodiff_variables, child)
+    
+
+def create_N_instances(autodiff_variables, current_object, N):
     #Create duplicates of the object (and its children)
     deselect_all()
     select_recursive(current_object)       
@@ -33,6 +50,11 @@ def create_N_instances(current_object, N):
         bpy.ops.object.duplicate_move_linked()
         sel_roots = [obj for obj in bpy.context.selected_objects if obj.parent is None]
         instances += sel_roots 
+
+    # Duplicate bounding boxes/axes systems
+    for inst in instances:
+        duplicate_autodiff_vars_recursive(autodiff_variables, inst)
+
 
     deselect_all()
 
@@ -61,15 +83,7 @@ def create_parent_group(parent_name, objects):
     parent.empty_display_size = 2
     parent.empty_display_type = 'PLAIN_AXES'   
     bpy.context.scene.collection.objects.link(parent)
-    
-
-    #self.parent_object = parent
-    #self.id_data.register_object(self.parent_object)
-
-    # Hide the input
-    
-    #deselect_recursive(current_object)
-
+   
     # Select instances
     for inst in objects:
         inst.select_set(True)
@@ -86,3 +100,14 @@ def create_parent_group(parent_name, objects):
 
     return parent
 
+
+
+def create_empty_bounding_box_for(autodiff_variables, obj):
+    box = ScOrientedBoundingBox.fromObject(obj) #Try creating from object, might be empty
+
+    autodiff_variables.create_default_axis_system(obj.name)                
+    autodiff_variables.set_box_from_constants(obj.name, box)
+
+    obj["OBB"] = obj.name
+    
+    

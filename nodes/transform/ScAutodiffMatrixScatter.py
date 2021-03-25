@@ -6,7 +6,7 @@ from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_operator import ScObjectOperatorNode
 from ...helper import convert_array_to_matrix
-from ...optimization.ScAutodiffVariableCollection import ScAutodiffOrientedBoundingBox
+from ...optimization.ScAutodiffVariableCollection import ScAutodiffOrientedBoundingBox, ScAutodiffAxisSystem
 
 from ...optimization import ScInstanceUtils as instance_utils
 
@@ -97,11 +97,12 @@ class ScAutodiffMatrixScatter(Node, ScObjectOperatorNode):
         # 1. Create instances
         #####################
 
-        self.instances = instance_utils.create_N_instances(current_object, N)
+        self.instances = instance_utils.create_N_instances(autodiff_variables, current_object, N)
         self.parent_object = instance_utils.create_parent_group(
             "MatrixScatterParent" + self.node_name,
             self.instances
         )
+        instance_utils.create_empty_bounding_box_for(autodiff_variables, self.parent_object)
         instance_utils.register_recursive(self.parent_object, self.id_data)
         instance_utils.hide_recursive(current_object)
 
@@ -127,45 +128,25 @@ class ScAutodiffMatrixScatter(Node, ScObjectOperatorNode):
 
                     index = x + y * (NumX) + z * (NumX * NumY) 
                     inst = self.instances[index]
-
-                    inst.select_set(True)            
-                    bpy.context.view_layer.objects.active = inst
-
-                    inst_name = "{}_node{}_instance{}".format(box_name, self.node_name, index)
-
-                    # Create unique identifier
-                    inst["OBB"] = inst_name
-                    inst.name = inst_name            
-
-                    #Setup new bbox and axis system
-                    inst_box = ScAutodiffOrientedBoundingBox.fromOrientedBoundingBox(orig_box)
-                    autodiff_variables.duplicate_axis_system(box_name, inst["OBB"])
-                    autodiff_variables.set_box(inst["OBB"], inst_box)                    
-                    
                     # Modify
                     tx = (orig_box.get_extent_x()*2 + dvars["StepX"]["symbol"]) * x - matrix_size_X * 0.5 + orig_box.get_extent_x()*2 * 0.5
                     ty = (orig_box.get_extent_y()*2 + dvars["StepY"]["symbol"]) * y - matrix_size_Y * 0.5 + orig_box.get_extent_y()*2 * 0.5
                     tz = (orig_box.get_extent_z()*2 + dvars["StepZ"]["symbol"]) * z - matrix_size_Z * 0.5 + orig_box.get_extent_z() *2* 0.5
 
-                    #autodiff_variables.get_axis_system(inst["OBB"]).scale(s,s,s)
-                    autodiff_variables.get_axis_system(inst["OBB"]).translate(tx,ty,tz)
 
-                    # Evaluate the local axis system for this object
-                    autodiff_matrix = autodiff_variables.evaluate_matrix(autodiff_variables.get_axis_system(inst["OBB"]).matrix)
-                    # Set the local matrix of the object to apply the transformation
-                    inst.matrix_basis = convert_array_to_matrix(autodiff_matrix)
+                    translate = ScAutodiffAxisSystem.fromDefault()
+                    translate.translate(tx,ty,tz)
 
-                    
-                    inst.select_set(False)
+                    T = translate
 
-        # Setup parent bounding box
-        parent_box = ScAutodiffOrientedBoundingBox.fromCenterAndExtent(
-            orig_box.get_center_x(), 
-            [matrix_size_X,matrix_size_Y,matrix_size_Z]
-            )
-        autodiff_variables.create_default_axis_system(self.parent_object.name)        
-        autodiff_variables.set_box(self.parent_object.name, parent_box)         
-        self.parent_object["OBB"] = self.parent_object.name
+                    autodiff_variables.get_axis_system(inst["OBB"]).apply(T)
+
+                    Treal = convert_array_to_matrix(autodiff_variables.evaluate_matrix(T.matrix))
+                    inst.matrix_local = Treal @ inst.matrix_local
+
+
+        
+
 
     def post_execute(self):
         out = super().post_execute()
