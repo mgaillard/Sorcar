@@ -66,7 +66,7 @@ class ScBevel(Node, ScEditOperatorNode):
             offset_pct = self.inputs["Offset"].default_value,
             segments = int(self.inputs["Segments"].default_value),
             profile = self.inputs["Profile"].default_value,
-            vertex_only = self.inputs["Vertex Only"].default_value,
+            #vertex_only = self.inputs["Vertex Only"].default_value,
             clamp_overlap = self.inputs["Clamp Overlap"].default_value,
             loop_slide = self.inputs["Loop Slide"].default_value,
             mark_seam = self.inputs["Mark Seams"].default_value,

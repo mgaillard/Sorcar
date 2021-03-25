@@ -32,6 +32,7 @@ import nodeitems_utils
 import addon_utils
 import importlib
 import os
+from pathlib import Path
 
 from bpy.types import NodeTree, Operator, PropertyGroup, AddonPreferences
 from bpy.props import BoolProperty, StringProperty, IntProperty, EnumProperty
@@ -214,7 +215,7 @@ def sc_register_node_categories(identifier, cat_list):
     # stores: (categories list, menu draw function, submenu types)
     nodeitems_utils._node_categories[identifier] = (cat_list, draw_add_menu, menu_types)
 
-path = repr([i for i in addon_utils.modules() if i.bl_info['name'] == "Sorcar"][0]).split("from '")[1].split("__init__.py'>")[0]
+path = str(Path(repr([i for i in addon_utils.modules() if i.bl_info['name'] == "Sorcar"][0]).split("from '")[1].split("__init__.py'>")[0])) + "\\"
 all_classes = []
 addon_keymaps = []
 icons = ()

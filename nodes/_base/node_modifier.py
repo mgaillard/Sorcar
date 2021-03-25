@@ -28,6 +28,6 @@ class ScModifierNode(ScNode):
     
     def post_execute(self):
         out = super().post_execute()
-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier=self.prop_mod_name)
+        bpy.ops.object.modifier_apply( modifier=self.prop_mod_name)
         out["Object"] = self.inputs["Object"].default_value
         return out
