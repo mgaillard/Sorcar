@@ -69,6 +69,7 @@ menu = [
         "ScAutodiffLocalTransform",
         None,
         "ScAutodiffRadialScatter",
+        "ScAutodiffMatrixScatter",
     ]),
     ("selection", [
         "ScSelectManually",

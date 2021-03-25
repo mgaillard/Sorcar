@@ -21,14 +21,18 @@ class ScDebugPanel(Panel, ScPanel):
             arr_internal = []
             for i in range(0, len(n.keys())):
                 k = n.keys()[i]
-                if (k.startswith('in_')):
-                    arr_in.append((bpy.path.display_name(k.replace('in_', '')), eval('n.' + k)))
-                elif (k.startswith('prop_')):
-                    arr_prop.append((bpy.path.display_name(k.replace('prop_', '')), eval('n.' + k)))
-                elif (k.startswith('out_')):
-                    arr_out.append((bpy.path.display_name(k.replace('out_', '')), eval('n.' + k)))
-                else:
-                    arr_internal.append((bpy.path.display_name(k.replace('node', '')), eval('n.' + k)))
+                try:
+                    if (k.startswith('in_')):
+                        arr_in.append((bpy.path.display_name(k.replace('in_', '')), eval('n.' + k)))
+                    elif (k.startswith('prop_')):
+                        arr_prop.append((bpy.path.display_name(k.replace('prop_', '')), eval('n.' + k)))
+                    elif (k.startswith('out_')):
+                        arr_out.append((bpy.path.display_name(k.replace('out_', '')), eval('n.' + k)))
+                    else:
+                        arr_internal.append((bpy.path.display_name(k.replace('node', '')), eval('n.' + k)))
+                except:
+                    print("Exception in drawing debug panel")
+
             if (len(arr_in) > 0):
                 layout.label(text="Inputs")
                 b = layout.box()

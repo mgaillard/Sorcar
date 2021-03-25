@@ -8,8 +8,11 @@ from .._base.node_operator import ScObjectOperatorNode
 from ...helper import convert_array_to_matrix
 from ...optimization.ScAutodiffVariableCollection import ScAutodiffOrientedBoundingBox
 
+from ...optimization import ScInstanceUtils as instance_utils
+
 import numpy as np
 import casadi
+
 
 class ScAutodiffRadialScatter(Node, ScObjectOperatorNode):
     bl_idname = "ScAutodiffRadialScatter"
@@ -45,10 +48,8 @@ class ScAutodiffRadialScatter(Node, ScObjectOperatorNode):
         )
 
     def free(self):
-        for inst in self.instances:
-            self.id_data.unregister_object(inst)
-
-        self.id_data.unregister_object(self.parent_object)
+        instance_utils.unregister_recursive(self.parent_object, self.id_data)
+        
     
     def functionality(self):
         super().functionality()
@@ -84,58 +85,25 @@ class ScAutodiffRadialScatter(Node, ScObjectOperatorNode):
         # 1. Create instances
         #####################
 
-        #Create duplicates of the object
-        current_object.select_set(True)
-        self.instances = []
-        for i in range(N):
-            bpy.ops.object.duplicate_move()
-            self.instances += bpy.context.selected_objects
-
-        #Register with node graph 
-        for inst in self.instances:
-            self.id_data.register_object(inst)
+        self.instances = instance_utils.create_N_instances(current_object, N)
+        self.parent_object = instance_utils.create_parent_group(
+            "RadialScatterParent" + self.node_name,
+            self.instances
+        )
+        instance_utils.register_recursive(self.parent_object, self.id_data)
+        instance_utils.hide_recursive(current_object)
         
-
-        # Create empty parent
-        parent = bpy.data.objects.new("Parent" + self.node_name, None)        
-        parent.empty_display_size = 2
-        parent.empty_display_type = 'PLAIN_AXES'   
-        bpy.context.scene.collection.objects.link(parent)
-
-        self.parent_object = parent
-        self.id_data.register_object(self.parent_object)
-
-        # Hide the input
-        current_object.select_set(False)
-        current_object.hide_render = False
-        current_object.hide_viewport = False
-        
-
-        # Select instances
-        for inst in self.instances:
-            inst.select_set(True)
-
-        # Select and activate parent
-        parent.select_set(True)        
-        bpy.context.view_layer.objects.active = parent
-
-        # Perform parenting
-        bpy.ops.object.parent_set(type='OBJECT', keep_transform=False)
-
-        #Deselect all
-        bpy.context.view_layer.objects.active = None
-        for obj in bpy.context.selected_objects:
-            obj.select_set(False)  
-
-
         #####################
         # 2. Distribute instances
         #####################
 
+        orig_box = None
 
         if "OBB" in current_object:
             box_name = current_object["OBB"]
-            print("Old box: ", box_name)
+            orig_box = autodiff_variables.get_box(box_name)
+        else: 
+            raise Exception("No BB box")
         
 
         for index, inst in enumerate(self.instances):
@@ -170,6 +138,19 @@ class ScAutodiffRadialScatter(Node, ScObjectOperatorNode):
 
             
             inst.select_set(False)
+    
+        # Setup parent bounding box
+        parent_box = ScAutodiffOrientedBoundingBox.fromCenterAndExtent(
+            orig_box.get_center_x(), 
+            [dvars["Radius"]["symbol"] * dvars["Scale"]["symbol"],dvars["Radius"]["symbol"] * dvars["Scale"]["symbol"],orig_box.get_extent_z() * dvars["Scale"]["symbol"]]
+            )
+        autodiff_variables.create_default_axis_system(self.parent_object.name)        
+        autodiff_variables.set_box(self.parent_object.name, parent_box)         
+        self.parent_object["OBB"] = self.parent_object.name
 
 
+    def post_execute(self):
+        out = super().post_execute()
+        out["Object"] = self.parent_object        
+        return out
         
