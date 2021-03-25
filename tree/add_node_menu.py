@@ -66,7 +66,9 @@ menu = [
         "ScCreateOrientation",
         None,
         "ScAutodiffWorldTransform",
-        "ScAutodiffLocalTransform"
+        "ScAutodiffLocalTransform",
+        None,
+        "ScAutodiffRadialScatter",
     ]),
     ("selection", [
         "ScSelectManually",
