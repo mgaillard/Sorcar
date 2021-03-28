@@ -41,27 +41,52 @@ class ScAutodiffApplyTransform(Node, ScObjectOperatorNode):
         apply_scale = self.inputs["Scale"].default_value
         autodiff_variables = self.prop_nodetree.autodiff_variables
 
-        # TODO: separate transformations, and remove this condition
-        if apply_location and apply_rotation and apply_scale:
-            # Perform the operation on the object
-            bpy.ops.object.transform_apply(
-                location = apply_location,
-                rotation = apply_rotation,
-                scale = apply_scale
-            )
+        # Perform the operation on the object
+        bpy.ops.object.transform_apply(
+            location = apply_location,
+            rotation = apply_rotation,
+            scale = apply_scale
+        )
 
         # Get the bounding box if it exists, then transforms it
         if "OBB" in current_object:
             box_name = current_object["OBB"]
 
-            # TODO: separate transformations
-            if apply_location and apply_rotation and apply_scale:
-                # Get the current bounding box transformed according to its axis system
-                # Since we just want the current axis system applied on the bounding box and not 
-                # the full hierarchy, we pass an empty list of objects
-                transformed_box = autodiff_variables.compute_transformed_bounding_box([], box_name)
-                # Modify the box
-                autodiff_variables.set_box(box_name, transformed_box)
-                # Reset the axis system to default
-                self.prop_nodetree.autodiff_variables.create_default_axis_system(box_name)
-                # It's not necessary to evaluate the world matrix and update it, since it has been reset to default
+            # Get the original bounding box
+            original_bounding_box = autodiff_variables.get_box(box_name)
+
+            # Get the current bounding box transformed according to its axis system
+            # Since we just want the current axis system applied on the bounding box and not 
+            # the full hierarchy, we pass an empty list of objects
+            transformed_box = autodiff_variables.compute_transformed_bounding_box([], box_name)
+
+            # If not fully applied, reset the appropriate parts of the box
+            if not apply_location:
+                transformed_box.center = original_bounding_box.center
+
+            if not apply_rotation:
+                transformed_box.axis = original_bounding_box.axis
+
+            if not apply_scale:
+                transformed_box.extent = original_bounding_box.extent
+
+            # Modify the box
+            autodiff_variables.set_box(box_name, transformed_box)
+
+
+            # Get the axis system of the box
+            axis_system = autodiff_variables.get_axis_system(box_name)
+
+            # If not fully applied, reset the appropriate parts of the box
+            if apply_location:
+                axis_system.reset_translation()
+
+            if apply_rotation:
+                axis_system.reset_rotation()
+
+            if apply_scale:
+                axis_system.reset_scale()
+
+            # Modify the axis system
+            autodiff_variables.set_axis_system(box_name, axis_system)
+            # It's not necessary to evaluate the world matrix and update it, since it has been reset to default

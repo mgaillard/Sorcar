@@ -334,6 +334,10 @@ class ScAutodiffAxisSystem:
         self.set_translation_y(translation_y)
         self.set_translation_z(translation_z)
 
+    def reset_translation(self):
+        zero = casadi.MX([0.0])
+        self.set_translation(zero, zero, zero)
+
     def translate_x(self, translation_x):
         self.matrix[0, 3] = self.matrix[0, 3] + translation_x
         
@@ -371,8 +375,26 @@ class ScAutodiffAxisSystem:
 
         self.matrix = casadi.mtimes(matrix_scale, self.matrix)
 
+    def reset_scale(self):
+        # Extract the current scale
+        scale_x = casadi.norm_2(self.matrix[0:3, 0])
+        scale_y = casadi.norm_2(self.matrix[0:3, 1])
+        scale_z = casadi.norm_2(self.matrix[0:3, 2])
+        matrix_scale = casadi.MX.eye(3)
+        matrix_scale[0, 0] = casadi.MX([1.0]) / scale_x
+        matrix_scale[1, 1] = casadi.MX([1.0]) / scale_y
+        matrix_scale[2, 2] = casadi.MX([1.0]) / scale_z
+        self.matrix[0:3, 0:3] = casadi.mtimes(matrix_scale, self.matrix[0:3, 0:3])
+
     def reset_rotation(self):
+        # Extract the current scale
+        scale_x = casadi.norm_2(self.matrix[0:3, 0])
+        scale_y = casadi.norm_2(self.matrix[0:3, 1])
+        scale_z = casadi.norm_2(self.matrix[0:3, 2])
         self.matrix[0:3, 0:3] = casadi.MX.eye(3)
+        self.matrix[0, 0] = scale_x
+        self.matrix[1, 1] = scale_y
+        self.matrix[2, 2] = scale_z
 
     def rotate_x(self, angle_x):
         cx = casadi.cos(angle_x)
@@ -486,6 +508,9 @@ class ScAutodiffVariableCollection:
             return self.axis_systems[name]
         else:
             return None
+        
+    def set_axis_system(self, name, axis_system):
+        self.axis_systems[name] = axis_system
 
     def create_default_axis_system(self, name):
         self.axis_systems[name] = ScAutodiffAxisSystem.fromDefault()
