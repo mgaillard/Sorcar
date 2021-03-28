@@ -11,8 +11,6 @@ from ...optimization.ScAutodiffVariableCollection import ScAutodiffOrientedBound
 from ...optimization import ScInstanceUtils as instance_utils
 
 import numpy as np
-import casadi
-
 
 class ScAutodiffRadialScatter(Node, ScObjectOperatorNode):
     bl_idname = "ScAutodiffRadialScatter"

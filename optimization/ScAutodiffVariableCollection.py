@@ -45,6 +45,12 @@ class ScAutodiffVariable:
     def get_value(self):
         return self.value
 
+    # Wrapper of casadi methods
+
+    @staticmethod
+    def floor(symbol):
+        return casadi.floor(symbol)
+
 
 class ScAutodiffOrientedBoundingBox:
 

@@ -6,12 +6,11 @@ from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_operator import ScObjectOperatorNode
 from ...helper import convert_array_to_matrix
-from ...optimization.ScAutodiffVariableCollection import ScAutodiffOrientedBoundingBox, ScAutodiffAxisSystem
+from ...optimization.ScAutodiffVariableCollection import ScAutodiffVariable, ScAutodiffAxisSystem
 
 from ...optimization import ScInstanceUtils as instance_utils
 
 import numpy as np
-import casadi
 
 class ScAutodiffMatrixScatter(Node, ScObjectOperatorNode):
     bl_idname = "ScAutodiffMatrixScatter"
@@ -80,9 +79,9 @@ class ScAutodiffMatrixScatter(Node, ScObjectOperatorNode):
                 "temp" : temp
             }
         
-        numX_symbol = casadi.floor(dvars["NumX"]["symbol"])
-        numY_symbol = casadi.floor(dvars["NumY"]["symbol"])
-        numZ_symbol = casadi.floor(dvars["NumZ"]["symbol"])
+        numX_symbol = ScAutodiffVariable.floor(dvars["NumX"]["symbol"])
+        numY_symbol = ScAutodiffVariable.floor(dvars["NumY"]["symbol"])
+        numZ_symbol = ScAutodiffVariable.floor(dvars["NumZ"]["symbol"])
         N_symbol = numX_symbol * numY_symbol * numZ_symbol
 
         
