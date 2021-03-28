@@ -45,33 +45,34 @@ class ScInverseModeling(Operator):
 
         if event.type == 'MOUSEMOVE':
             curr_tree = context.space_data.edit_tree
-            target_bounding_boxes = self.find_target_bounding_boxes(curr_tree.get_object_boxes())
+            if (curr_tree):
+                target_bounding_boxes = self.find_target_bounding_boxes(curr_tree.get_object_boxes())
 
-            if(len(target_bounding_boxes) > 0):
-                
-                #Save selection
-                sel_object_names = [obj.name for obj in bpy.data.objects if obj.select_get()]            
+                if(len(target_bounding_boxes) > 0):
+                    
+                    #Save selection
+                    sel_object_names = [obj.name for obj in bpy.data.objects if obj.select_get()]            
 
-                # Optimization
-                initial_float_properties = curr_tree.get_float_properties()
-                float_properties_bounds = curr_tree.get_float_properties_bounds()
-                solver = ScInverseModelingSolver(curr_tree, target_bounding_boxes, initial_float_properties, float_properties_bounds)
-                best_float_properties = solver.solve()
-                curr_tree.set_float_properties(best_float_properties)
-                
-                # Reset state
-                context.view_layer.update()
-                self.original_bounding_boxes = curr_tree.get_object_boxes()
+                    # Optimization
+                    initial_float_properties = curr_tree.get_float_properties()
+                    float_properties_bounds = curr_tree.get_float_properties_bounds()
+                    solver = ScInverseModelingSolver(curr_tree, target_bounding_boxes, initial_float_properties, float_properties_bounds)
+                    best_float_properties = solver.solve()
+                    curr_tree.set_float_properties(best_float_properties)
+                    
+                    # Reset state
+                    context.view_layer.update()
+                    self.original_bounding_boxes = curr_tree.get_object_boxes()
 
-                #Deselect all
-                for obj in bpy.data.objects:
-                    obj.select_set(False)
-                # Renew selection
-                for name in sel_object_names:
-                    if name in bpy.data.objects:
-                        bpy.data.objects[name].select_set(True)
+                    #Deselect all
+                    for obj in bpy.data.objects:
+                        obj.select_set(False)
+                    # Renew selection
+                    for name in sel_object_names:
+                        if name in bpy.data.objects:
+                            bpy.data.objects[name].select_set(True)
 
-            return {'PASS_THROUGH'}
+                return {'PASS_THROUGH'}
 
         # Pass Through: do nothing and pass the event on.
         return {'PASS_THROUGH'}
