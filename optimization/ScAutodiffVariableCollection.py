@@ -6,7 +6,7 @@ import numpy as np
 
 from .ScOrientedBoundingBox import ScOrientedBoundingBox
 
-path.append(r"casadi-py37-v3.5.5")
+path.append(r"casadi-py39-v3.5.5")
 import casadi
 
 
