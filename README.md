@@ -1,3 +1,27 @@
+# Sorcar with Autodiff
+
+Adding support for auto-differentiation in Sorcar for Inverse Procedural Modeling.
+
+## Install
+ - Install Visual Studio Code Extension "Blender Development" by Jacques Lucke
+ - Install Blender version 2.93 LTS
+ - Download CasADi for Python 3.9
+ - Extract and rename CasADi to be in the folder `/casadi-py39-v3.5.5`
+ - Go to the Blender embedded Python directory (`Blender 2.93\2.93\python\bin`) and launch a command prompt
+     - List packages: `.\python.exe -m pip list`
+     - Upgrade pip: `.\python.exe -m pip install --upgrade pip`
+     - Install packages:
+         - `.\python.exe -m pip install ptvsd`
+         - `.\python.exe -m pip install debugpy`
+         - `.\python.exe -m pip install Flask`
+         - `.\python.exe -m pip install casadi`
+         - `.\python.exe -m pip install scipy`
+
+## Start
+ - Open the code folder in Visual Studio Code
+ - Control + Shift + P > Blender: Start
+ - Select the right Blender version
+
 # Sorcar
 
 Procedural modeling in Blender using Node Editor
