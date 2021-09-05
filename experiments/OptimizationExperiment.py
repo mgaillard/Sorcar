@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 
 # TODO: animation of the plot
 # TODO: implement a list for function optimization, and minize all of them with different optimizers
+# TODO: add global optimization objective function
+# TODO: add global optimization methods
 
 class OptimizationHistory:
     """ Register evaluations of the cost function as optimization is happening """
@@ -91,8 +93,7 @@ class CasadiFunction:
 
 def generate_rosen():
     """
-    Rosenbrock function in CasADi
-    2D Rosenbrock
+    2D Rosenbrock function
     a = 1.0
     b = 100.0
     Optimimum: [1.0, 1.0]
@@ -102,10 +103,24 @@ def generate_rosen():
     return CasadiFunction(expr, x)
 
 
+def generate_underdetermined_linear():
+    """
+    Underdetermined function: z = x + y
+    f(x,y) = (z - 1.0)*(z - 1.0)
+    """
+    x = SX.sym('x', 2)
+    # Function
+    z = x[0] + x[1]
+    # We want to fit z so that z = 1.0
+    expr = (z - 1.0)*(z - 1.0)
+    return CasadiFunction(expr, x)
+
+
 def generate_functions():
     """ Generate a list of predefined functions to optimize """
     functions = {
-        'rosen': generate_rosen()
+        'rosen': generate_rosen(),
+        'underdetermined_linear': generate_underdetermined_linear()
     }
     return functions
 
@@ -171,7 +186,7 @@ def optimization(function):
 def main():
     functions = generate_functions()    
     # Optimization of the function
-    optimization(functions['rosen'])
+    optimization(functions['underdetermined_linear'])
 
 
 if __name__ == "__main__":
