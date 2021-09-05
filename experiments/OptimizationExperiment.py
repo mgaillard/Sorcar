@@ -155,7 +155,7 @@ def optimization(function):
     start_time = default_timer()
     res = minimize(function.evaluate,
                    x0,
-                   method='Newton-CG',
+                   method='BFGS',
                    jac=function.derivative,
                    hess=function.hessian,
                    callback=optim_history.callback,
