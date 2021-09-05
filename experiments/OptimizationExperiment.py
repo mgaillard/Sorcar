@@ -1,12 +1,11 @@
 from timeit import default_timer
 import numpy as np
+from casadi import *
 from scipy.optimize import minimize, rosen, rosen_der
 import matplotlib.pyplot as plt
 
 # TODO: animation of the plot
-# TODO: make it possible to change the target function to optimize
-# TODO: implement the benchmark function with CasADi and use AD for Jacobian and Hessian
-#       make a class that accepts a CasADi expression and evaluate it and derivate it with class members
+# TODO: implement the Hessian in the Casadi function
 # TODO: implement a list for function optimization, and minize all of them with different optimizers
 
 class OptimizationHistory:
@@ -30,12 +29,46 @@ class OptimizationHistory:
         self.history.append(np.copy(xk))
 
 
-def function(X):
-    return rosen(X)
+class CasadiFunction:
+    """
+    Casadi wrapper for a function to optimize.
+    Jacobian and Hessian matrices are computed using automatic differentiation
+    """
 
+    def __init__(self, expression, symbols):
+        """
+        Initialize the function to optimize and its gradient
+        """
+        # Number of dimensions of the function to optimize
+        self.dimensionality = symbols.shape[0]
+        # Build CasADi Function for evaluating the function to optimize
+        self.func = Function('f', [symbols], [expression])
+        # Build CasADi Function for evaluating the gradient of the function to optimize
+        grad_expression = gradient(expression, symbols);
+        self.grad_func = Function('g', [symbols], [grad_expression])
 
-def function_der(X):
-    return rosen_der(X)
+    def evaluate(self, x):
+        # Check that the input has the right dimensionality
+        if len(x) == self.dimensionality:
+            # Call the function with the parameters
+            result = self.func.call([x])
+            # Convert the output to float
+            return float(result[0])
+        # By default, the output is None
+        return None
+
+    def derivative(self, x):
+        # Check that the input has the right dimensionality
+        if len(x) == self.dimensionality:
+            # Call the function with the parameters
+            results = self.grad_func.call([x])
+            # Convert the output to float
+            output = []
+            for i in range(self.dimensionality):
+                output.append(float(results[0][i]))
+            return output
+        # By default, the output is None
+        return None
 
 
 def plot_function_surface():
@@ -50,17 +83,24 @@ def plot_function_surface():
     plt.show()
 
 
-def plot_function_contour_with_samples(path):
+def plot_function_contour_with_samples(function, path):
     """
     2D contour plot of the function with optimization path
     Source: http://louistiao.me/notes/visualizing-and-animating-optimization-algorithms-with-matplotlib/
     """
     transpose_path = path.T
 
-    x = np.linspace(-2.0, 2.0, 50)
-    y = np.linspace(-1.0, 3.0, 50)
+    resolutionX = 50
+    resolutionY = 50
+
+    x = np.linspace(-2.0, 2.0, resolutionX)
+    y = np.linspace(-1.0, 3.0, resolutionY)
     X, Y = np.meshgrid(x, y)
-    Z = function([X, Y])
+
+    Z = np.zeros((resolutionX, resolutionY))
+    for i in range(resolutionX):
+        for j in range(resolutionY):
+            Z[i, j] = function.evaluate([X[i, j], Y[i, j]])
     
     fig, ax = plt.subplots(figsize=(6, 6))
     # Contour plot of the function
@@ -81,27 +121,32 @@ def plot_function_contour_with_samples(path):
     plt.show()
 
 
-def optimization():
+def optimization(function):
     x0 = [1.3, 0.7]
     optim_history = OptimizationHistory()
 
     start_time = default_timer()
-    res = minimize(function,
+    res = minimize(function.evaluate,
                    x0,
                    method='BFGS',
-                   jac=function_der,
+                   jac=function.derivative,
                    callback=optim_history.callback,
                    options={'gtol': 1e-6, 'disp': True})
     end_time = default_timer()
     
     print('Optimization time: {} s'.format(end_time - start_time))
     print('Final parameter vector: {}'.format(res.x))
-    plot_function_contour_with_samples(optim_history.get_history())
+    plot_function_contour_with_samples(function, optim_history.get_history())
     
 
 
 def main():
-    optimization()
+    # Rosenbrock function in CasADi
+    x = MX.sym('x', 2)
+    expr = (1.0 - x[0])*(1.0 - x[0]) + 100.0*(x[1] - x[0]*x[0])*(x[1] - x[0]*x[0])
+    function = CasadiFunction(expr, x)
+    # Optimization of the function
+    optimization(function)
 
 
 if __name__ == "__main__":
