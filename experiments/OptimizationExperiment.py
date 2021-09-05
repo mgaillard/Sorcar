@@ -1,8 +1,8 @@
+from timeit import default_timer
 import numpy as np
 from scipy.optimize import minimize, rosen, rosen_der
 import matplotlib.pyplot as plt
 
-# TODO: measure optimization time
 # TODO: animation of the plot
 # TODO: make it possible to change the target function to optimize
 # TODO: implement the benchmark function with CasADi and use AD for Jacobian and Hessian
@@ -85,13 +85,16 @@ def optimization():
     x0 = [1.3, 0.7]
     optim_history = OptimizationHistory()
 
+    start_time = default_timer()
     res = minimize(function,
                    x0,
                    method='BFGS',
                    jac=function_der,
                    callback=optim_history.callback,
                    options={'gtol': 1e-6, 'disp': True})
+    end_time = default_timer()
     
+    print('Optimization time: {} s'.format(end_time - start_time))
     print('Final parameter vector: {}'.format(res.x))
     plot_function_contour_with_samples(optim_history.get_history())
     
