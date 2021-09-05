@@ -19,7 +19,7 @@ class OptimizationHistory:
     def get_history(self):
         return np.array(self.history)
 
-    def callback(self, xk):
+    def add_sample(self, xk):
         """
         Callback for scipy.optimize.minimize()
         Parameter xk is the current parameter vector 
@@ -151,6 +151,7 @@ def plot_function_contour_with_samples(function, path):
 def optimization(function):
     x0 = [1.3, 0.7]
     optim_history = OptimizationHistory()
+    optim_history.add_sample(x0)
 
     start_time = default_timer()
     res = minimize(function.evaluate,
@@ -158,7 +159,7 @@ def optimization(function):
                    method='BFGS',
                    jac=function.derivative,
                    hess=function.hessian,
-                   callback=optim_history.callback,
+                   callback=optim_history.add_sample,
                    options={'gtol': 1e-6, 'disp': True})
     end_time = default_timer()
     
