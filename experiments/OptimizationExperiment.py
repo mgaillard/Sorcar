@@ -5,7 +5,6 @@ from scipy.optimize import minimize, rosen, rosen_der
 import matplotlib.pyplot as plt
 
 # TODO: animation of the plot
-# TODO: implement the Hessian in the Casadi function
 # TODO: implement a list for function optimization, and minize all of them with different optimizers
 
 class OptimizationHistory:
@@ -46,6 +45,9 @@ class CasadiFunction:
         # Build CasADi Function for evaluating the gradient of the function to optimize
         grad_expression = gradient(expression, symbols);
         self.grad_func = Function('g', [symbols], [grad_expression])
+        # Buils CasADi Function for evaluating the Hessian of the function to optimize
+        hess_expression, g = hessian(expression, symbols)
+        self.hess_func = Function('h', [symbols], [hess_expression])
 
     def evaluate(self, x):
         # Check that the input has the right dimensionality
@@ -70,17 +72,42 @@ class CasadiFunction:
         # By default, the output is None
         return None
 
+    def hessian(self, x):
+        # Check that the input has the right dimensionality
+        if len(x) == self.dimensionality:
+            # Call the function with the parameters
+            results = self.hess_func.call([x])
+            # Convert the output to float
+            output = []
+            for i in range(self.dimensionality):
+                row = []
+                for j in range(self.dimensionality):
+                    row.append(float(results[0][i, j]))
+                output.append(row)
+            return output
+        # By default, the output is None
+        return None
 
-def plot_function_surface():
-    x = np.linspace(-2.0, 2.0, 50)
-    y = np.linspace(-1.0, 3.0, 50)
-    X, Y = np.meshgrid(x, y)
-    Z = function([X, Y])
-    
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    ax.plot_surface(X, Y, Z)
 
-    plt.show()
+def generate_rosen():
+    """
+    Rosenbrock function in CasADi
+    2D Rosenbrock
+    a = 1.0
+    b = 100.0
+    Optimimum: [1.0, 1.0]
+    """
+    x = SX.sym('x', 2)
+    expr = (1.0 - x[0])*(1.0 - x[0]) + 100.0*(x[1] - x[0]*x[0])*(x[1] - x[0]*x[0])
+    return CasadiFunction(expr, x)
+
+
+def generate_functions():
+    """ Generate a list of predefined functions to optimize """
+    functions = {
+        'rosen': generate_rosen()
+    }
+    return functions
 
 
 def plot_function_contour_with_samples(function, path):
@@ -128,8 +155,9 @@ def optimization(function):
     start_time = default_timer()
     res = minimize(function.evaluate,
                    x0,
-                   method='BFGS',
+                   method='Newton-CG',
                    jac=function.derivative,
+                   hess=function.hessian,
                    callback=optim_history.callback,
                    options={'gtol': 1e-6, 'disp': True})
     end_time = default_timer()
@@ -137,16 +165,12 @@ def optimization(function):
     print('Optimization time: {} s'.format(end_time - start_time))
     print('Final parameter vector: {}'.format(res.x))
     plot_function_contour_with_samples(function, optim_history.get_history())
-    
 
 
 def main():
-    # Rosenbrock function in CasADi
-    x = MX.sym('x', 2)
-    expr = (1.0 - x[0])*(1.0 - x[0]) + 100.0*(x[1] - x[0]*x[0])*(x[1] - x[0]*x[0])
-    function = CasadiFunction(expr, x)
+    functions = generate_functions()    
     # Optimization of the function
-    optimization(function)
+    optimization(functions['rosen'])
 
 
 if __name__ == "__main__":
