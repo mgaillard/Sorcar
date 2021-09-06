@@ -8,11 +8,10 @@ import matplotlib.pyplot as plt
 # TODO: animation of the plot
 # TODO: implement a list for function optimization, and minimize all of them with different optimizers
 # TODO: add undetermined functions with a solution set that is 1D and curved
-# TODO: add undetermined functions with a solution set that is 1D and circular
 # TODO: add undetermined function with a solution set that is 2D
 # TODO: add global optimization objective function
-# TODO: add global optimization methods
 # TODO: look at the Hessian of the underdetermined function in the valley
+# TODO: add bounds for each function
 
 class OptimizationHistory:
     """ Register evaluations of the cost function as optimization is happening """
