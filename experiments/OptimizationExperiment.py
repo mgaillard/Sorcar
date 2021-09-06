@@ -130,6 +130,17 @@ def generate_underdetermined_linear():
     return CasadiFunction(expr, x)
 
 
+def generate_underdetermined_circle():
+    """
+    Underdetermined function: squared distance to circle of radius 1.0
+    """
+    x = SX.sym('x', 2)
+    # Signed distance to circle of radius 1.0
+    d = norm_2(x) - 1.0
+    # Squared distance
+    expr = pow(d, 2)
+    return CasadiFunction(expr, x)
+
 def generate_himmelblau():
     """
     Himmelblau function
@@ -160,6 +171,7 @@ def generate_functions():
     functions = {
         'rosen': generate_rosen(),
         'underdetermined_linear': generate_underdetermined_linear(),
+        'underdetermined_circle': generate_underdetermined_circle(),
         'himmelblau': generate_himmelblau(),
         'rastrigin': generate_rastrigin()
     }
