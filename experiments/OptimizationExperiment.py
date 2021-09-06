@@ -6,11 +6,10 @@ from scipy.optimize import minimize, basinhopping
 import matplotlib.pyplot as plt
 
 # TODO: animation of the plot
-# TODO: implement a list for function optimization, and minimize all of them with different optimizers
-# TODO: add undetermined functions with a solution set that is 1D and curved
-# TODO: add undetermined function with a solution set that is 2D
-# TODO: add global optimization objective function
+# TODO: minimize the list of functions with different optimizers
+# TODO: add undertermined functions with a solution set that is 1D and curved
 # TODO: look at the Hessian of the underdetermined function in the valley
+# TODO: plot the surface of the Taylor approximation on top of the actual function 
 # TODO: in priority, try to change the basinhopping instead of reinventing the wheel
 
 class OptimizationHistory:
@@ -312,7 +311,10 @@ def global_optimization(function):
 def main():
     functions = generate_functions()    
     # Optimization of the function
-    optimization(functions['rosen'])
+    # optimization(functions['rosen'])
+    print(functions['underdetermined_linear']['function'].evaluate([0.3, 0.7]))
+    print(functions['underdetermined_linear']['function'].derivative([0.3, 0.7]))
+    print(functions['underdetermined_linear']['function'].hessian([0.3, 0.7]))
 
 
 if __name__ == "__main__":
