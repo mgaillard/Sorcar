@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 # TODO: add undetermined function with a solution set that is 2D
 # TODO: add global optimization objective function
 # TODO: look at the Hessian of the underdetermined function in the valley
-# TODO: add bounds for each function
+# TODO: in priority, try to change the basinhopping instead of reinventing the wheel
 
 class OptimizationHistory:
     """ Register evaluations of the cost function as optimization is happening """
@@ -113,7 +113,11 @@ def generate_rosen():
     """
     x = SX.sym('x', 2)
     expr = pow(1.0 - x[0], 2) + 100.0*pow(x[1] - x[0]*x[0], 2)
-    return CasadiFunction(expr, x)
+    return {
+        'function': CasadiFunction(expr, x),
+        'bounds': [(-2.0, 2.0), (-1.0, 3.0)],
+        'starting_point': [1.3, 0.7]
+    }
 
 
 def generate_underdetermined_linear():
@@ -126,7 +130,11 @@ def generate_underdetermined_linear():
     z = x[0] + x[1]
     # We want to fit z so that z = 1.0
     expr = pow(z - 1.0, 2)
-    return CasadiFunction(expr, x)
+    return {
+        'function': CasadiFunction(expr, x),
+        'bounds': [(-2.0, 2.0), (-2.0, 2.0)],
+        'starting_point': [1.3, 0.7]
+    }
 
 
 def generate_underdetermined_circle():
@@ -138,7 +146,30 @@ def generate_underdetermined_circle():
     d = norm_2(x) - 1.0
     # Squared distance
     expr = pow(d, 2)
-    return CasadiFunction(expr, x)
+    return {
+        'function': CasadiFunction(expr, x),
+        'bounds': [(-2.0, 2.0), (-2.0, 2.0)],
+        'starting_point': [1.3, 0.7]
+    }
+
+
+def generate_underdetermined_disk():
+    """
+    Underdetermined function: zero ellipsoid disk with square distance to it
+    """
+    x = SX.sym('x', 2)
+    # Signed distance to ellipsoid circle of radius 1.0
+    d = norm_2(x / SX([2.0, 1.0])) - 1.0
+    # Remove the negative portion of the disk
+    d_plus = fmax(d, 0.0)
+    # Squared distance
+    expr = pow(d_plus, 2)
+    return {
+        'function': CasadiFunction(expr, x),
+        'bounds': [(-3.0, 3.0), (-3.0, 3.0)],
+        'starting_point': [1.5, -1.8]
+    }
+
 
 def generate_himmelblau():
     """
@@ -152,7 +183,11 @@ def generate_himmelblau():
     """
     x = SX.sym('x', 2)
     expr = pow(x[0]*x[0] + x[1] - 11.0, 2) + pow(x[0] + x[1]*x[1] - 7.0, 2)
-    return CasadiFunction(expr, x)
+    return {
+        'function': CasadiFunction(expr, x),
+        'bounds': [(-5.0, 5.0), (-5.0, 5.0)],
+        'starting_point': [1.3, 0.7]
+    }
 
 
 def generate_rastrigin():
@@ -162,7 +197,11 @@ def generate_rastrigin():
     """
     x = SX.sym('x', 2)
     expr = 20.0 + pow(x[0]*x[0] - 10.0*cos(2.0*math.pi*x[0]), 2) + pow(x[1]*x[1] - 10.0*cos(2.0*math.pi*x[1]), 2)
-    return CasadiFunction(expr, x)
+    return {
+        'function': CasadiFunction(expr, x),
+        'bounds': [(-5.0, 5.0), (-5.0, 5.0)],
+        'starting_point': [1.3, 0.7]
+    }
 
 
 def generate_functions():
@@ -171,6 +210,7 @@ def generate_functions():
         'rosen': generate_rosen(),
         'underdetermined_linear': generate_underdetermined_linear(),
         'underdetermined_circle': generate_underdetermined_circle(),
+        'underdetermined_disk': generate_underdetermined_disk(),
         'himmelblau': generate_himmelblau(),
         'rastrigin': generate_rastrigin()
     }
@@ -182,21 +222,21 @@ def plot_function_contour_with_samples(function, path):
     2D contour plot of the function with optimization path
     Source: http://louistiao.me/notes/visualizing-and-animating-optimization-algorithms-with-matplotlib/
     """
+    func = function['function']
+    bounds = function['bounds']
     transpose_path = path.T
 
     resolutionX = 50
     resolutionY = 50
 
-    # x = np.linspace(-2.0, 2.0, resolutionX)
-    # y = np.linspace(-1.0, 3.0, resolutionY)
-    x = np.linspace(-5.0, 5.0, resolutionX)
-    y = np.linspace(-5.0, 5.0, resolutionY)
+    x = np.linspace(bounds[0][0], bounds[0][1], resolutionX)
+    y = np.linspace(bounds[1][0], bounds[1][1], resolutionY)
     X, Y = np.meshgrid(x, y)
 
     Z = np.zeros((resolutionX, resolutionY))
     for i in range(resolutionX):
         for j in range(resolutionY):
-            Z[i, j] = function.evaluate([X[i, j], Y[i, j]])
+            Z[i, j] = func.evaluate([X[i, j], Y[i, j]])
     
     fig, ax = plt.subplots(figsize=(6, 6))
     # Contour plot of the function
@@ -218,16 +258,23 @@ def plot_function_contour_with_samples(function, path):
 
 
 def optimization(function):
-    x0 = [1.3, 0.7]
+    """
+    Local optimization of a function
+    """
+    func = function['function']
+    bounds = function['bounds']
+    x0 = function['starting_point']
+
     optim_history = OptimizationHistory()
     optim_history.add_sample(x0)
 
     start_time = default_timer()
-    res = minimize(function.evaluate,
+    res = minimize(func.evaluate,
                    x0,
                    method='BFGS',
-                   jac=function.derivative,
-                   hess=function.hessian,
+                   jac=func.derivative,
+                   hess=func.hessian,
+                   bounds=bounds,
                    callback=optim_history.add_sample,
                    options={'gtol': 1e-6, 'disp': True})
     end_time = default_timer()
@@ -238,13 +285,19 @@ def optimization(function):
 
 
 def global_optimization(function):
-    x0 = [1.3, 0.7]
+    """
+    Global optimization of a function
+    """
+    func = function['function']
+    bounds = function['bounds']
+    x0 = function['starting_point']
+
     optim_history = OptimizationHistory()
     optim_history.add_sample(x0)
 
     start_time = default_timer()
-    minimizer_kwargs = {"method": "BFGS", "jac": function.derivative}
-    res = basinhopping(function.evaluate,
+    minimizer_kwargs = {"method": "BFGS", "jac": func.derivative}
+    res = basinhopping(func.evaluate,
                        x0,
                        minimizer_kwargs=minimizer_kwargs,
                        niter=200,
