@@ -8,8 +8,7 @@ import matplotlib.pyplot as plt
 # TODO: animation of the plot
 # TODO: minimize the list of functions with different optimizers
 # TODO: add undertermined functions with a solution set that is 1D and curved
-# TODO: look at the Hessian of the underdetermined function in the valley
-# TODO: plot the surface of the Taylor approximation on top of the actual function 
+# TODO: plot the absolute difference between the Taylor approximation and the function
 # TODO: in priority, try to change the basinhopping instead of reinventing the wheel
 
 class OptimizationHistory:
@@ -101,6 +100,19 @@ class CasadiFunction:
             return output
         # By default, the output is None
         return None
+
+    def taylor(self, x, p):
+        """
+        Second order approximation of the function using the gradient and the Hessian
+        """
+        dx = np.array(p) - np.array(x)
+        f = np.array(self.evaluate(x))
+        g = np.array(self.derivative(x))
+        H = np.array(self.hessian(x))
+
+        approximation = f + np.dot(g, dx) + 0.5 * np.dot(dx, np.matmul(H, dx))
+
+        return approximation
 
 
 def generate_rosen():
@@ -216,6 +228,34 @@ def generate_functions():
     return functions
 
 
+def plot_surface_and_taylor(function, point):
+    """
+    Plot the surface of a function and it's local Taylor approximation around the point x
+    """
+    func = function['function']
+    bounds = function['bounds']
+
+    resolutionX = 50
+    resolutionY = 50
+
+    x = np.linspace(bounds[0][0], bounds[0][1], resolutionX)
+    y = np.linspace(bounds[1][0], bounds[1][1], resolutionY)
+    X, Y = np.meshgrid(x, y)
+
+    Z1 = np.zeros((resolutionX, resolutionY))
+    Z2 = np.zeros((resolutionX, resolutionY))
+    for i in range(resolutionX):
+        for j in range(resolutionY):
+            Z1[i, j] = func.evaluate([X[i, j], Y[i, j]])
+            Z2[i, j] = func.taylor(point, [X[i, j], Y[i, j]])
+
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    ax.plot_surface(X, Y, Z1)
+    ax.plot_surface(X, Y, Z2, cmap=plt.cm.jet)
+
+    plt.show()
+
+
 def plot_function_contour_with_samples(function, path):
     """
     2D contour plot of the function with optimization path
@@ -312,10 +352,7 @@ def main():
     functions = generate_functions()    
     # Optimization of the function
     # optimization(functions['rosen'])
-    print(functions['underdetermined_linear']['function'].evaluate([0.3, 0.7]))
-    print(functions['underdetermined_linear']['function'].derivative([0.3, 0.7]))
-    print(functions['underdetermined_linear']['function'].hessian([0.3, 0.7]))
-
+    plot_surface_and_taylor(functions['underdetermined_circle'], [0.3, 0.7])
 
 if __name__ == "__main__":
     main()
