@@ -309,6 +309,22 @@ def generate_underdetermined_disk():
     }
 
 
+def generate_underdetermined_arm():
+    """
+    Underdetermined function: 2D robotic arm sliding
+    """
+    x = SX.sym('x', 2)
+    # One arm is 1.0 long, the second arm is 2.0 long
+    y = 1.0 * sin(x[0]) + 2.0 * sin(x[1])
+    # Try to keep the arm on the X axis (i.e. y=0)
+    expr = pow(y, 2)
+    return {
+        'function': CasadiFunction(expr, x),
+        'bounds': [(-3.14, 3.14), (-3.14, 3.14)],
+        'starting_point': [0.785, 0.0]
+    }
+
+
 def generate_himmelblau():
     """
     Himmelblau function
@@ -349,6 +365,7 @@ def generate_functions():
         'underdetermined_linear': generate_underdetermined_linear(),
         'underdetermined_circle': generate_underdetermined_circle(),
         'underdetermined_disk': generate_underdetermined_disk(),
+        'underdetermined_arm': generate_underdetermined_arm(),
         'himmelblau': generate_himmelblau(),
         'rastrigin': generate_rastrigin()
     }
@@ -540,6 +557,7 @@ def main():
     global_optimization(functions['rosen'])
     global_optimization(functions['underdetermined_circle'])
     global_optimization(functions['underdetermined_disk'])
+    global_optimization(functions['underdetermined_arm'])
 
 if __name__ == "__main__":
     main()
