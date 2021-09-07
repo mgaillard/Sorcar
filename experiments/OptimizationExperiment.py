@@ -4,11 +4,12 @@ import numpy as np
 from casadi import *
 from scipy.optimize import minimize, basinhopping
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 
-# TODO: animation of the plot
+# TODO: animation of the optimization plot
 # TODO: minimize the list of functions with different optimizers
-# TODO: add undertermined functions with a solution set that is 1D and curved
-# TODO: plot the absolute difference between the Taylor approximation and the function
+# TODO: add undertermined functions with a solution set that is 1D and curved but without a loop
+# TODO: get the list of solution points from the bassinhopping algorithm
 # TODO: in priority, try to change the basinhopping instead of reinventing the wheel
 
 class OptimizationHistory:
@@ -242,16 +243,26 @@ def plot_surface_and_taylor(function, point):
     y = np.linspace(bounds[1][0], bounds[1][1], resolutionY)
     X, Y = np.meshgrid(x, y)
 
+    # True function
     Z1 = np.zeros((resolutionX, resolutionY))
+    # Taylor approximation
     Z2 = np.zeros((resolutionX, resolutionY))
+    # Absolute difference
+    D = np.zeros((resolutionX, resolutionY))
     for i in range(resolutionX):
         for j in range(resolutionY):
             Z1[i, j] = func.evaluate([X[i, j], Y[i, j]])
             Z2[i, j] = func.taylor(point, [X[i, j], Y[i, j]])
+            D[i, j] = abs(Z1[i, j] - Z2[i, j])
 
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    ax.plot_surface(X, Y, Z1)
-    ax.plot_surface(X, Y, Z2, cmap=plt.cm.jet)
+    contour_lines = 20 # Number of contour lines
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    ax1.contourf(X, Y, Z1, contour_lines, cmap=plt.cm.jet)
+    ax1.plot(point[0], point[1], 'r*', markersize=10)
+    ax2.contourf(X, Y, Z2, contour_lines, cmap=plt.cm.jet)
+    ax2.plot(point[0], point[1], 'r*', markersize=10)
+    ax3.contourf(X, Y, D, contour_lines, cmap=plt.cm.jet)
+    ax3.plot(point[0], point[1], 'r*', markersize=10)
 
     plt.show()
 
@@ -279,7 +290,10 @@ def plot_function_contour_with_samples(function, path):
     
     fig, ax = plt.subplots(figsize=(6, 6))
     # Contour plot of the function
-    ax.contour(X, Y, Z, 20, cmap=plt.cm.jet)
+    contour_lines = 20 # Number of contour lines
+    ax.contourf(X, Y, Z, contour_lines, cmap=plt.cm.jet)
+    contours = ax.contour(X, Y, Z, contour_lines, colors='black')
+    plt.clabel(contours, inline=True, fontsize=8)
     # Path with arrows
     ax.quiver(transpose_path[0,:-1],
               transpose_path[1,:-1],
