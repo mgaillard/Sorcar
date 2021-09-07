@@ -515,7 +515,7 @@ def global_optimization(function):
 
 
 def main():
-    functions = generate_functions()    
+    functions = generate_functions()
     # Optimization of the function
     optimization(functions['rosen'])
     global_optimization(functions['rosen'])
