@@ -11,8 +11,8 @@ from matplotlib import ticker
 # TODO: add underdetermined functions with a solution set that is 1D and curved but without a loop
 # TODO: try trust region methods for local optimization
 # TODO: find interesting samples
-#        - the one that is the nearest to the starting point
-#        - the one that is the farthest to the starting point
+#        - the one that keeps proportions in the input parameters
+#        - the one with the same delta added to the parameters
 # TODO: display the interesting samples
 # TODO: run K-Medoid on the set of points
 # TODO: find an order for the medoids
@@ -87,7 +87,19 @@ class OptimizationAcceptedPointList:
             dist = np.linalg.norm(self.points[i][0] - x)
             if dist < nearest_distance:
                 nearest = self.points[i][0]
+                nearest_distance = dist
         return np.copy(nearest)
+
+    def farthest_point(self, x):
+        """ Return the farthest point to a query point """
+        farthest = self.points[0][0]
+        farthest_distance = np.linalg.norm(farthest - x)
+        for i in range(len(self.points)):
+            dist = np.linalg.norm(self.points[i][0] - x)
+            if dist > farthest_distance:
+                farthest = self.points[i][0]
+                farthest_distance = dist
+        return np.copy(farthest)
 
     def get_points(self):
         # Extract points only
@@ -333,7 +345,7 @@ def plot_surface_and_taylor(function, point):
     plt.show()
 
 
-def plot_function_contour_with_samples(function, path, starting_point, show_arrows):
+def plot_function_contour_with_samples(function, path, show_arrows, interesting_points=[]):
     """
     2D contour plot of the function with optimization path
     Source: http://louistiao.me/notes/visualizing-and-animating-optimization-algorithms-with-matplotlib/
@@ -377,7 +389,10 @@ def plot_function_contour_with_samples(function, path, starting_point, show_arro
                    c='black')
 
     # Starting point in red
-    ax.plot(starting_point[0], starting_point[1], 'r*', markersize=10)
+    for interesting_point in interesting_points:
+        p = interesting_point[0] # 2D point
+        c = interesting_point[1] # Color and marker type
+        ax.plot(p[0], p[1], c, markersize=10)
 
     # Axes labels
     ax.set_xlabel('$x$')
@@ -410,7 +425,10 @@ def optimization(function):
     
     print('Optimization time: {} s'.format(end_time - start_time))
     print('Final parameter vector: {}'.format(res.x))
-    plot_function_contour_with_samples(function, optim_history.get_history(), x0, show_arrows=True)
+    plot_function_contour_with_samples(function,
+                                       optim_history.get_history(),
+                                       show_arrows=True,
+                                       interesting_points=[(x0, 'r*')])
 
 
 def global_optimization(function):
@@ -432,17 +450,33 @@ def global_optimization(function):
                        callback=optim_points.basinhopping_callback,
                        disp=None)
     end_time = default_timer()
+
+    optimal_point = res.x
+    nearest_optimal_point = optim_points.nearest_point(x0)
+    farthest_optimal_point = optim_points.farthest_point(x0)
+
+    interesting_points = [
+        (x0, 'r*'),                    # Starting point with a red start
+        (optimal_point, 'g*'),         # Global optimum with a green start
+        (nearest_optimal_point, 'mP'), # Nearest optimum with a Magenta +
+        (farthest_optimal_point, 'mH') # Farthest optimum with a Magenta hexagon
+    ]
     
     print('Optimization time: {} s'.format(end_time - start_time))
-    print('Basinhopping final parameter vector: {}'.format(res.x))
+    print('Basinhopping final parameter vector: {}'.format(optimal_point))
     print('Is solution unique: {}'.format(optim_points.is_unique_point()))
-    print('Solution nearest to the starting point: {}'.format(optim_points.nearest_point(x0)))
-    plot_function_contour_with_samples(function, optim_points.get_points(), x0, show_arrows=False)
+    print('Solution nearest to the starting point: {}'.format(nearest_optimal_point))
+    print('Solution farthest to the starting point: {}'.format(farthest_optimal_point))
+    plot_function_contour_with_samples(function,
+                                       optim_points.get_points(),
+                                       show_arrows=False,
+                                       interesting_points=interesting_points)
 
 
 def main():
     functions = generate_functions()    
     # Optimization of the function
+    optimization(functions['rosen'])
     global_optimization(functions['rosen'])
     global_optimization(functions['underdetermined_circle'])
     global_optimization(functions['underdetermined_disk'])
