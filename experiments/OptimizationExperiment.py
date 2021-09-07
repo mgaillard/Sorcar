@@ -7,10 +7,25 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 
 # TODO: animation of the optimization plot
-# TODO: minimize the list of functions with different optimizers
-# TODO: add undertermined functions with a solution set that is 1D and curved but without a loop
-# TODO: get the list of solution points from the bassinhopping algorithm
-# TODO: in priority, try to change the basinhopping instead of reinventing the wheel
+# TODO: minimize the list of functions with different optimizers and show different animations
+# TODO: add underdetermined functions with a solution set that is 1D and curved but without a loop
+# TODO: try trust region methods for local optimization
+# TODO: find interesting samples
+#        - the one that is the nearest to the starting point
+#        - the one that is the farthest to the starting point
+# TODO: display the interesting samples
+# TODO: run K-Medoid on the set of points
+# TODO: find an order for the medoids
+# TODO: try nonlinear-PCA on the set of points
+# TODO: show a slider (1D or 2D) for exploring the solution set, and by changing it, show the position on the 2D plot
+# TODO: early stop if the solution is unique (no basin), then switch to global optimization until the budget is over
+# TODO: try to see if an increase in the stepsize improve the spread of samples
+# TODO: try a function whose optimum is not 0 but a higher value
+# TODO: in priority, try to change the basinhopping instead of reinventing the wheel, bias steps with the Hessian
+# TODO: make the whole algorithm work with bounded functions
+#        - Use L-BFGS-B for local optimization
+#        - Use accept_test argument in basinhopping to set bounds
+#          See last example of: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.basinhopping.html
 
 class OptimizationHistory:
     """ Register evaluations of the cost function as optimization is happening """
@@ -32,14 +47,65 @@ class OptimizationHistory:
         # Note that we make a deep copy of xk
         self.history.append(np.copy(xk))
 
-    def add_sample_basinhopping(self, x, f, accept):
+
+# value function + location + sort them by value
+class OptimizationAcceptedPointList:
+    """
+    Register the list of accepted points when running the basinhopping global optimization algorithm
+    """
+
+    def __init__(self):
+        # List of tuples: (point, f_value)
+        self.points = []
+
+    def reset(self):
+        self.points = []
+
+    def sort_points(self):
+        # Sort according to the function value (increasing)
+        self.points.sort(key=lambda x: x[1])
+
+    def is_unique_point(self, threshold=1e-4):
+        """
+        Compute the maximum Euclidean distance between N pairs of random points
+        If the maximum distance is below a threshold, then points are all representing a unique point
+        """
+        max_dist = 0.0
+        for i in range(len(self.points)):
+            for j in range(len(self.points)):
+                if i < j:
+                    d = np.linalg.norm(self.points[i][0] - self.points[j][0])
+                    max_dist = max(max_dist, d)
+        
+        return (max_dist <= threshold)
+
+    def nearest_point(self, x):
+        """ Return the nearest point to a query point """
+        nearest = self.points[0][0]
+        nearest_distance = np.linalg.norm(nearest - x)
+        for i in range(len(self.points)):
+            dist = np.linalg.norm(self.points[i][0] - x)
+            if dist < nearest_distance:
+                nearest = self.points[i][0]
+        return np.copy(nearest)
+
+    def get_points(self):
+        # Extract points only
+        points = []
+        for p in self.points:
+            points.append(p[0])
+        return np.array(points)
+
+    def basinhopping_callback(self, x, f, accept):
         """
         Callback for scipy.optimize.basinhopping()
         Parameter x is the current parameter vector
-        We ignore other parameters
+        Parameter f is the value of the function
+        Parameter accept is True if it's an accepted minimum
         """
-        # Note that we make a deep copy of xk
-        self.history.append(np.copy(x))
+        if accept:
+            # Note that we make a deep copy of x
+            self.points.append((np.copy(x), f))
 
 
 class CasadiFunction:
@@ -267,7 +333,7 @@ def plot_surface_and_taylor(function, point):
     plt.show()
 
 
-def plot_function_contour_with_samples(function, path):
+def plot_function_contour_with_samples(function, path, starting_point, show_arrows):
     """
     2D contour plot of the function with optimization path
     Source: http://louistiao.me/notes/visualizing-and-animating-optimization-algorithms-with-matplotlib/
@@ -294,16 +360,26 @@ def plot_function_contour_with_samples(function, path):
     ax.contourf(X, Y, Z, contour_lines, cmap=plt.cm.jet)
     contours = ax.contour(X, Y, Z, contour_lines, colors='black')
     plt.clabel(contours, inline=True, fontsize=8)
-    # Path with arrows
-    ax.quiver(transpose_path[0,:-1],
-              transpose_path[1,:-1],
-              transpose_path[0,1:] - transpose_path[0,:-1],
-              transpose_path[1,1:] - transpose_path[1,:-1],
-              scale_units='xy',
-              angles='xy',
-              scale=1,
-              color='k')
 
+    # Path with arrows
+    if show_arrows:
+        ax.quiver(transpose_path[0,:-1],
+                  transpose_path[1,:-1],
+                  transpose_path[0,1:] - transpose_path[0,:-1],
+                  transpose_path[1,1:] - transpose_path[1,:-1],
+                  scale_units='xy',
+                  angles='xy',
+                  scale=1,
+                  color='k')
+    else:
+        ax.scatter(transpose_path[0,:-1],
+                   transpose_path[1,:-1],
+                   c='black')
+
+    # Starting point in red
+    ax.plot(starting_point[0], starting_point[1], 'r*', markersize=10)
+
+    # Axes labels
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
 
@@ -334,7 +410,7 @@ def optimization(function):
     
     print('Optimization time: {} s'.format(end_time - start_time))
     print('Final parameter vector: {}'.format(res.x))
-    plot_function_contour_with_samples(function, optim_history.get_history())
+    plot_function_contour_with_samples(function, optim_history.get_history(), x0, show_arrows=True)
 
 
 def global_optimization(function):
@@ -345,8 +421,7 @@ def global_optimization(function):
     bounds = function['bounds']
     x0 = function['starting_point']
 
-    optim_history = OptimizationHistory()
-    optim_history.add_sample(x0)
+    optim_points = OptimizationAcceptedPointList()
 
     start_time = default_timer()
     minimizer_kwargs = {"method": "BFGS", "jac": func.derivative}
@@ -354,19 +429,23 @@ def global_optimization(function):
                        x0,
                        minimizer_kwargs=minimizer_kwargs,
                        niter=200,
-                       callback=optim_history.add_sample_basinhopping)
+                       callback=optim_points.basinhopping_callback,
+                       disp=None)
     end_time = default_timer()
     
     print('Optimization time: {} s'.format(end_time - start_time))
-    print('Final parameter vector: {}'.format(res.x))
-    plot_function_contour_with_samples(function, optim_history.get_history())
+    print('Basinhopping final parameter vector: {}'.format(res.x))
+    print('Is solution unique: {}'.format(optim_points.is_unique_point()))
+    print('Solution nearest to the starting point: {}'.format(optim_points.nearest_point(x0)))
+    plot_function_contour_with_samples(function, optim_points.get_points(), x0, show_arrows=False)
 
 
 def main():
     functions = generate_functions()    
     # Optimization of the function
-    # optimization(functions['rosen'])
-    plot_surface_and_taylor(functions['underdetermined_circle'], [0.3, 0.7])
+    global_optimization(functions['rosen'])
+    global_optimization(functions['underdetermined_circle'])
+    global_optimization(functions['underdetermined_disk'])
 
 if __name__ == "__main__":
     main()
