@@ -13,6 +13,7 @@ from matplotlib import ticker
 # TODO: find interesting samples
 #        - the one that keeps proportions in the input parameters
 #        - the one with the same delta added to the parameters
+#        - the one with the least change in one dimension
 # TODO: run K-Medoid on the set of points
 # TODO: find an order for the medoids
 # TODO: try nonlinear-PCA on the set of points
@@ -121,8 +122,19 @@ class OptimizationAcceptedPointList:
         """
         Return the point with changes in parameters that are the closest to a proportional change
         For example: we multiply all parameters by 2.0, in this case the multiplier is 2.0
+        We look for the point whose range in proportion is the smallest among all parameters
+        For example in 2D: we look at pX=X_2-X_1 and pY=Y_2-Y_1 and compute the range max(pX, pY) - min(pX, pY)
+                           we select the point whose range is the lowest
+        Warning: if the starting configuration has one coordinate that is zero, this may fail
         """
-        pass
+        best = self.points[0][0]
+        best_range = np.amax(best / x) - np.amin(best / x)
+        for i in range(len(self.points)):
+            curr_range = np.amax(self.points[i][0] / x) - np.amin(self.points[i][0] / x)
+            if curr_range < best_range:
+                best = self.points[i][0]
+                best_range = curr_range
+        return np.copy(best)
 
     def get_points(self):
         # Extract points only
@@ -478,13 +490,15 @@ def global_optimization(function):
     nearest_optimal_point = optim_points.nearest_point(x0)
     farthest_optimal_point = optim_points.farthest_point(x0)
     delta_optimal_point = optim_points.most_delta_change_point(x0)
+    proportional_optimal_point = optim_points.most_proportional_change_point(x0)
 
     interesting_points = [
-        (x0, 'r*'),                     # Starting point with a red start
-        (optimal_point, 'g*'),          # Global optimum with a green start
-        (nearest_optimal_point, 'mP'),  # Nearest optimum with a magenta +
-        (farthest_optimal_point, 'mH'), # Farthest optimum with a magenta hexagon
-        (delta_optimal_point, 'ys')     # Most delta change optimum with a yellow square
+        (x0, 'r*'),                        # Starting point with a red start
+        (optimal_point, 'g*'),             # Global optimum with a green start
+        (nearest_optimal_point, 'mP'),     # Nearest optimum with a magenta +
+        (farthest_optimal_point, 'mH'),    # Farthest optimum with a magenta hexagon
+        (delta_optimal_point, 'ys'),       # Most delta change optimum with a yellow square
+        (proportional_optimal_point, 'y8') # Most proportional change optimum with a yellow octagon
     ]
     
     print('Optimization time: {} s'.format(end_time - start_time))
@@ -493,6 +507,7 @@ def global_optimization(function):
     print('Solution nearest to the starting point: {}'.format(nearest_optimal_point))
     print('Solution farthest to the starting point: {}'.format(farthest_optimal_point))
     print('Solution with the most delta change: {}'.format(delta_optimal_point))
+    print('Solution with the most proportional change: {}'.format(proportional_optimal_point))
     plot_function_contour_with_samples(function,
                                        optim_points.get_points(),
                                        show_arrows=False,
