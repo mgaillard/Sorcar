@@ -6,26 +6,23 @@ from scipy.optimize import minimize, basinhopping
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
+# TODO: add underdetermined functions with a solution set that is 1D and curved but without a loop (robotic arm sliding )
+# TODO: try a function whose optimum is not 0 but a higher value
 # TODO: animation of the optimization plot
 # TODO: minimize the list of functions with different optimizers and show different animations
-# TODO: add underdetermined functions with a solution set that is 1D and curved but without a loop
-# TODO: try trust region methods for local optimization
-# TODO: find interesting samples
-#        - the one that keeps proportions in the input parameters
-#        - the one with the same delta added to the parameters
-#        - the one with the least change in one dimension
 # TODO: run K-Medoid on the set of points
 # TODO: find an order for the medoids
 # TODO: try nonlinear-PCA on the set of points
 # TODO: show a slider (1D or 2D) for exploring the solution set, and by changing it, show the position on the 2D plot
 # TODO: early stop if the solution is unique (no basin), then switch to global optimization until the budget is over
 # TODO: try to see if an increase in the stepsize improve the spread of samples
-# TODO: try a function whose optimum is not 0 but a higher value
+# TODO: try trust region methods for local optimization
 # TODO: in priority, try to change the basinhopping instead of reinventing the wheel, bias steps with the Hessian
 # TODO: make the whole algorithm work with bounded functions
 #        - Use L-BFGS-B for local optimization
 #        - Use accept_test argument in basinhopping to set bounds
 #          See last example of: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.basinhopping.html
+
 
 class OptimizationHistory:
     """ Register evaluations of the cost function as optimization is happening """
@@ -108,6 +105,7 @@ class OptimizationAcceptedPointList:
         We look for the point whose range in delta is the smallest among all parameters
         For example in 2D: we look at deltaX and deltaY and compute the range max(deltaX, deltaY) - min(deltaX, deltaY)
                            we select the point whose range is the lowest
+        Geometric interpretation: closest to the line starting at x0 with direction vector (1, 1)
         """
         best = self.points[0][0]
         best_range = np.amax(best - x) - np.amin(best - x)
@@ -126,6 +124,7 @@ class OptimizationAcceptedPointList:
         For example in 2D: we look at pX=X_2-X_1 and pY=Y_2-Y_1 and compute the range max(pX, pY) - min(pX, pY)
                            we select the point whose range is the lowest
         Warning: if the starting configuration has one coordinate that is zero, this may fail
+        Geometric interpretation: closest to the line starting from the origin and going to x0
         """
         best = self.points[0][0]
         best_range = np.amax(best / x) - np.amin(best / x)
@@ -135,6 +134,20 @@ class OptimizationAcceptedPointList:
                 best = self.points[i][0]
                 best_range = curr_range
         return np.copy(best)
+
+    def least_change_on_axis_point(self, x, axis):
+        """
+        Return the with the least absolute delta on one axis
+        For example: the solution point with the smallest change on X axis
+        """
+        nearest = self.points[0][0]
+        nearest_distance = abs(nearest[axis] - x[axis])
+        for i in range(len(self.points)):
+            dist = abs(self.points[i][0][axis] - x[axis])
+            if dist < nearest_distance:
+                nearest = self.points[i][0]
+                nearest_distance = dist
+        return np.copy(nearest)
 
     def get_points(self):
         # Extract points only
@@ -491,6 +504,8 @@ def global_optimization(function):
     farthest_optimal_point = optim_points.farthest_point(x0)
     delta_optimal_point = optim_points.most_delta_change_point(x0)
     proportional_optimal_point = optim_points.most_proportional_change_point(x0)
+    least_change_x_optimal_point = optim_points.least_change_on_axis_point(x0, 0)
+    least_change_y_optimal_point = optim_points.least_change_on_axis_point(x0, 1)
 
     interesting_points = [
         (x0, 'r*'),                        # Starting point with a red start
@@ -498,7 +513,9 @@ def global_optimization(function):
         (nearest_optimal_point, 'mP'),     # Nearest optimum with a magenta +
         (farthest_optimal_point, 'mH'),    # Farthest optimum with a magenta hexagon
         (delta_optimal_point, 'ys'),       # Most delta change optimum with a yellow square
-        (proportional_optimal_point, 'y8') # Most proportional change optimum with a yellow octagon
+        (proportional_optimal_point, 'y8'), # Most proportional change optimum with a yellow octagon
+        (least_change_x_optimal_point, 'wX'), # Least change in X coordinate optimum with a white X
+        (least_change_y_optimal_point, 'wv'), # Least change in Y coordinate optimum with a white v
     ]
     
     print('Optimization time: {} s'.format(end_time - start_time))
@@ -508,6 +525,8 @@ def global_optimization(function):
     print('Solution farthest to the starting point: {}'.format(farthest_optimal_point))
     print('Solution with the most delta change: {}'.format(delta_optimal_point))
     print('Solution with the most proportional change: {}'.format(proportional_optimal_point))
+    print('Solution with the least change in X: {}'.format(least_change_x_optimal_point))
+    print('Solution with the least change in Y: {}'.format(least_change_y_optimal_point))
     plot_function_contour_with_samples(function,
                                        optim_points.get_points(),
                                        show_arrows=False,
