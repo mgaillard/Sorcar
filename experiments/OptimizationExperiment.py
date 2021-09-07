@@ -13,7 +13,6 @@ from matplotlib import ticker
 # TODO: find interesting samples
 #        - the one that keeps proportions in the input parameters
 #        - the one with the same delta added to the parameters
-# TODO: display the interesting samples
 # TODO: run K-Medoid on the set of points
 # TODO: find an order for the medoids
 # TODO: try nonlinear-PCA on the set of points
