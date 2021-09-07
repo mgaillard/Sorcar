@@ -100,6 +100,30 @@ class OptimizationAcceptedPointList:
                 farthest_distance = dist
         return np.copy(farthest)
 
+    def most_delta_change_point(self, x):
+        """
+        Return the point with changes in parameters that are the closest to a fixed delta change
+        For example: we add +1.0 to all parameters, in this case the delta is 1.0
+        We look for the point whose range in delta is the smallest among all parameters
+        For example in 2D: we look at deltaX and deltaY and compute the range max(deltaX, deltaY) - min(deltaX, deltaY)
+                           we select the point whose range is the lowest
+        """
+        best = self.points[0][0]
+        best_range = np.amax(best - x) - np.amin(best - x)
+        for i in range(len(self.points)):
+            curr_range = np.amax(self.points[i][0] - x) - np.amin(self.points[i][0] - x)
+            if curr_range < best_range:
+                best = self.points[i][0]
+                best_range = curr_range
+        return np.copy(best)
+
+    def most_proportional_change_point(self, x):
+        """
+        Return the point with changes in parameters that are the closest to a proportional change
+        For example: we multiply all parameters by 2.0, in this case the multiplier is 2.0
+        """
+        pass
+
     def get_points(self):
         # Extract points only
         points = []
@@ -453,12 +477,14 @@ def global_optimization(function):
     optimal_point = res.x
     nearest_optimal_point = optim_points.nearest_point(x0)
     farthest_optimal_point = optim_points.farthest_point(x0)
+    delta_optimal_point = optim_points.most_delta_change_point(x0)
 
     interesting_points = [
-        (x0, 'r*'),                    # Starting point with a red start
-        (optimal_point, 'g*'),         # Global optimum with a green start
-        (nearest_optimal_point, 'mP'), # Nearest optimum with a Magenta +
-        (farthest_optimal_point, 'mH') # Farthest optimum with a Magenta hexagon
+        (x0, 'r*'),                     # Starting point with a red start
+        (optimal_point, 'g*'),          # Global optimum with a green start
+        (nearest_optimal_point, 'mP'),  # Nearest optimum with a magenta +
+        (farthest_optimal_point, 'mH'), # Farthest optimum with a magenta hexagon
+        (delta_optimal_point, 'ys')     # Most delta change optimum with a yellow square
     ]
     
     print('Optimization time: {} s'.format(end_time - start_time))
@@ -466,6 +492,7 @@ def global_optimization(function):
     print('Is solution unique: {}'.format(optim_points.is_unique_point()))
     print('Solution nearest to the starting point: {}'.format(nearest_optimal_point))
     print('Solution farthest to the starting point: {}'.format(farthest_optimal_point))
+    print('Solution with the most delta change: {}'.format(delta_optimal_point))
     plot_function_contour_with_samples(function,
                                        optim_points.get_points(),
                                        show_arrows=False,
