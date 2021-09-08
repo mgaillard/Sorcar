@@ -713,3 +713,18 @@ class ScAutodiffVariableCollection:
             variable_value = results[0][i]
             output[variable_name] = float(variable_value)
         return output
+
+    def export_function(self, variable, filename):
+        symbols = casadi.symvar(variable)
+        # Functions
+        func = casadi.Function('f', symbols, [variable])
+        grad_expression = casadi.gradient(variable, casadi.vertcat(*symbols))
+        grad_func = casadi.Function('g', symbols, [grad_expression])
+        hess_expression, g = casadi.hessian(variable, casadi.vertcat(*symbols))
+        hess_func = casadi.Function('h', symbols, [hess_expression])
+        # Export the functions in C code
+        generator = casadi.CodeGenerator(filename)
+        generator.add(func)
+        generator.add(grad_func)
+        generator.add(hess_func)
+        generator.generate()
