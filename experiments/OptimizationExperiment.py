@@ -197,7 +197,7 @@ class CasadiFunction:
         # Build CasADi Function for evaluating the function to optimize
         self.func = Function('f', [symbols], [expression], function_options)
         # Build CasADi Function for evaluating the gradient of the function to optimize
-        grad_expression = gradient(expression, symbols);
+        grad_expression = gradient(expression, symbols)
         self.grad_func = Function('g', [symbols], [grad_expression], function_options)
         # Buils CasADi Function for evaluating the Hessian of the function to optimize
         hess_expression, g = hessian(expression, symbols)
@@ -259,11 +259,11 @@ class CasadiFunction:
         """
         Generate C code associated to the functions for later JIT compilation
         """
-        generator = CodeGenerator(filename);
-        generator.add(self.func);
-        generator.add(self.grad_func);
-        generator.add(self.hess_func);
-        generator.generate();
+        generator = CodeGenerator(filename)
+        generator.add(self.func)
+        generator.add(self.grad_func)
+        generator.add(self.hess_func)
+        generator.generate()
 
     def load_compile_code(self, filename):
         """
