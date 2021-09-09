@@ -12,8 +12,6 @@ from matplotlib import ticker
 #        - Use L-BFGS-B for local optimization
 #        - Use accept_test argument in basinhopping to set bounds
 #          See last example of: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.basinhopping.html
-# TODO: Plotting function in the optimization wrapper
-# TODO: Remove the old optimization functions
 # TODO: import more Blender functions with two variables (two cube stack)
 # TODO: make it possible to not provide the Hessian in Casadi Function
 # TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
@@ -313,6 +311,8 @@ class Optimizer:
         self.best_value = self.function.evaluate(x0)
         # Hessian of the best 
         self.best_hessian = None
+        # Set of optimal points found when exploring the optimal region
+        self.optimal_points = None
 
     def get_total_time(self):
         """ Return total optimization time """
@@ -407,7 +407,7 @@ class Optimizer:
         """
         start_time = default_timer()
         minimizer_kwargs = {
-            'method':'L-BFGS-B',
+            'method':'BFGS',
             'jac': self.function.derivative,
             'bounds': self.bounds
         }
@@ -431,7 +431,7 @@ class Optimizer:
 
         start_time = default_timer()
         minimizer_kwargs = {
-            'method':'L-BFGS-B',
+            'method':'BFGS',
             'jac': self.function.derivative,
             'bounds': self.bounds
         }
@@ -449,11 +449,8 @@ class Optimizer:
 
         # Sort points per increasing f value
         optim_points.sort_points()
-        # List interesting points
-        nearest_optimal_point = optim_points.nearest_point(self.x0)
-        farthest_optimal_point = optim_points.farthest_point(self.x0)
-        delta_optimal_point = optim_points.most_delta_change_point(self.x0)
-        proportional_optimal_point = optim_points.most_proportional_change_point(self.x0)
+        # Retain the optimal points
+        self.optimal_points = optim_points
 
     def optimize(self, budget):
         """
@@ -476,11 +473,40 @@ class Optimizer:
             print('Exploring the local region...')
             self.explore_optimality_region()
 
-    def plot(self):
+    def plot_2D(self):
         """
         Plot the function in 2D
         """
-        pass
+        if self.function.dimensionality==2:
+            # All points
+            all_points = np.array([self.x0])
+            # Interesting points to display
+            interesting_points = [
+                (self.x0, 'r*'),          # Starting point with a red star
+                (self.best_optimal, 'g*') # Global optimum with a green star
+            ]
+
+            if self.optimal_points is not None:
+                o = self.optimal_points
+                all_points = o.get_points()
+                # Nearest optimum with a magenta +
+                interesting_points.append((o.nearest_point(self.x0), 'mP'))
+                # Farthest optimum with a magenta hexagon
+                interesting_points.append((o.farthest_point(self.x0), 'mH'))
+                # Most delta change optimum with a yellow square
+                interesting_points.append((o.most_delta_change_point(self.x0), 'ys'))
+                # Most proportional change optimum with a yellow octagon
+                interesting_points.append((o.most_proportional_change_point(self.x0), 'y8'))
+                # Least change in X coordinate optimum with a white X
+                interesting_points.append((o.least_change_on_axis_point(self.x0, 0), 'wX'))
+                # Least change in Y coordinate optimum with a white v
+                interesting_points.append((o.least_change_on_axis_point(self.x0, 1), 'wv'))
+
+            plot_function_contour_with_samples(self.function,
+                                               self.bounds,
+                                               all_points,
+                                               show_arrows=False,
+                                               interesting_points=interesting_points)
 
 
 def generate_rosen():
@@ -705,13 +731,11 @@ def plot_surface_and_taylor(function, point):
     plt.show()
 
 
-def plot_function_contour_with_samples(function, path, show_arrows, interesting_points=[]):
+def plot_function_contour_with_samples(func, bounds, path, show_arrows, interesting_points=[]):
     """
     2D contour plot of the function with optimization path
     Source: http://louistiao.me/notes/visualizing-and-animating-optimization-algorithms-with-matplotlib/
     """
-    func = function['function']
-    bounds = function['bounds']
     transpose_path = path.T
 
     resolutionX = 50
@@ -761,111 +785,24 @@ def plot_function_contour_with_samples(function, path, show_arrows, interesting_
     plt.show()
 
 
-def optimization(function):
-    """
-    Local optimization of a function
-    """
-    func = function['function']
-    bounds = function['bounds']
-    x0 = function['starting_point']
-
-    optim_history = OptimizationHistory()
-    optim_history.add_sample(x0)
-
-    start_time = default_timer()
-    res = minimize(func.evaluate,
-                   x0,
-                   method='BFGS',
-                   jac=func.derivative,
-                   hess=func.hessian,
-                   bounds=bounds,
-                   callback=optim_history.add_sample,
-                   options={'gtol': 1e-6, 'disp': True})
-    end_time = default_timer()
-    
-    print('Optimization time: {} s'.format(end_time - start_time))
-    print('Final parameter vector: {}'.format(res.x))
-
-    # If the parameter space is 2D, show a plot
-    if func.dimensionality==2:
-        plot_function_contour_with_samples(function,
-                                           optim_history.get_history(),
-                                           show_arrows=True,
-                                           interesting_points=[(x0, 'r*')])
-
-
-def global_optimization(function):
-    """
-    Global optimization of a function
-    """
-    func = function['function']
-    bounds = function['bounds']
-    x0 = function['starting_point']
-
-    optim_points = OptimizationAcceptedPointList()
-
-    start_time = default_timer()
-    minimizer_kwargs = {"method": "BFGS", "jac": func.derivative}
-    res = basinhopping(func.evaluate,
-                       x0,
-                       minimizer_kwargs=minimizer_kwargs,
-                       niter=200,
-                       callback=optim_points.basinhopping_callback,
-                       disp=None)
-    end_time = default_timer()
-
-    optimal_point = res.x
-    optim_points.sort_points() # Sort point per increasing f value
-    nearest_optimal_point = optim_points.nearest_point(x0)
-    farthest_optimal_point = optim_points.farthest_point(x0)
-    delta_optimal_point = optim_points.most_delta_change_point(x0)
-    proportional_optimal_point = optim_points.most_proportional_change_point(x0)
-    least_change_x_optimal_point = optim_points.least_change_on_axis_point(x0, 0)
-    least_change_y_optimal_point = optim_points.least_change_on_axis_point(x0, 1)
-
-    interesting_points = [
-        (x0, 'r*'),                        # Starting point with a red star
-        (optimal_point, 'g*'),             # Global optimum with a green star
-        (nearest_optimal_point, 'mP'),     # Nearest optimum with a magenta +
-        (farthest_optimal_point, 'mH'),    # Farthest optimum with a magenta hexagon
-        (delta_optimal_point, 'ys'),       # Most delta change optimum with a yellow square
-        (proportional_optimal_point, 'y8'), # Most proportional change optimum with a yellow octagon
-        (least_change_x_optimal_point, 'wX'), # Least change in X coordinate optimum with a white X
-        (least_change_y_optimal_point, 'wv'), # Least change in Y coordinate optimum with a white v
-    ]
-    
-    print('Optimization time: {} s'.format(end_time - start_time))
-    print('Basinhopping final parameter vector: {}'.format(optimal_point))
-    print('Is solution unique: {}'.format(optim_points.is_unique_point()))
-    print('Solution nearest to the starting point: {}'.format(nearest_optimal_point))
-    print('Solution farthest to the starting point: {}'.format(farthest_optimal_point))
-    print('Solution with the most delta change: {}'.format(delta_optimal_point))
-    print('Solution with the most proportional change: {}'.format(proportional_optimal_point))
-    print('Solution with the least change in X: {}'.format(least_change_x_optimal_point))
-    print('Solution with the least change in Y: {}'.format(least_change_y_optimal_point))
-
-    # If the parameter space is 2D, show a plot
-    if func.dimensionality==2:
-        plot_function_contour_with_samples(function,
-                                           optim_points.get_points(),
-                                           show_arrows=False,
-                                           interesting_points=interesting_points)
-
-
 def main():
     functions = generate_functions()
-    # Optimization of the function
-    optimization(functions['rosen'])
-    global_optimization(functions['rosen'])
-    global_optimization(functions['underdetermined_circle'])
-    global_optimization(functions['underdetermined_disk'])
-    global_optimization(functions['underdetermined_arm'])
 
-    # optimizer = Optimizer(functions['underdetermined_disk']['function'],
-    #                       functions['underdetermined_disk']['bounds'],
-    #                       functions['underdetermined_disk']['starting_point'])
-    # optimizer.optimize(200)
-    # print('Total optimization time: {} s'.format(optimizer.get_total_time()))
+    functions_to_optimize = [
+        'rosen',
+        'underdetermined_circle',
+        'underdetermined_disk',
+        'underdetermined_arm'
+    ]
+
+    # Optimization of the functions
+    for f in functions_to_optimize:
+        optimizer = Optimizer(functions[f]['function'],
+                              functions[f]['bounds'],
+                              functions[f]['starting_point'])
+        optimizer.optimize(400)
+        print('Total optimization time: {} s'.format(optimizer.get_total_time()))
+        optimizer.plot_2D()
 
 
 if __name__ == "__main__":
