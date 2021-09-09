@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 
 # TODO: import more Blender functions with two variables (two cube stack)
+# TODO: make it possible to not provide the Hessian in Casadi Function
 # TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
 # TODO: package the optimizer in a class that only takes the Casadi function and returns a special solution object
 # TODO: to check if the solution is unique, check that the Hessian has no null eigen values
@@ -265,7 +266,7 @@ class CasadiFunction:
         generator.add(self.hess_func)
         generator.generate()
 
-    def load_compile_code(self, filename):
+    def load_and_jit_compile_code(self, filename):
         """
         Load a previously saved function
         JIT compile it using the embedded clang in Casadi
@@ -274,6 +275,16 @@ class CasadiFunction:
         self.func = external('f', importer)
         self.grad_func = external('g', importer)
         self.hess_func = external('h', importer)
+        # Infer the dimensionality from the function input size
+        self.dimensionality = self.func.size1_in(0)
+
+    def load_binary_code(self, filename):
+        """
+        Load a previously saved function already compiled
+        """
+        self.func = external('f', filename)
+        self.grad_func = external('g', filename)
+        self.hess_func = external('h', filename)
         # Infer the dimensionality from the function input size
         self.dimensionality = self.func.size1_in(0)
 
@@ -399,7 +410,7 @@ def generate_sorcar_cube_size_underdetermined():
     """
     # Build the function
     function = CasadiFunction()
-    function.load_compile_code('functions/sorcar_cube_size.c')
+    function.load_and_jit_compile_code('functions/sorcar_cube_size.c')
     return {
         'function': function,
         'bounds': [(0.0, 5.0), (0.0, 5.0)],
@@ -580,10 +591,13 @@ def optimization(function):
     
     print('Optimization time: {} s'.format(end_time - start_time))
     print('Final parameter vector: {}'.format(res.x))
-    plot_function_contour_with_samples(function,
-                                       optim_history.get_history(),
-                                       show_arrows=True,
-                                       interesting_points=[(x0, 'r*')])
+
+    # If the parameter space is 2D, show a plot
+    if func.dimensionality==2:
+        plot_function_contour_with_samples(function,
+                                           optim_history.get_history(),
+                                           show_arrows=True,
+                                           interesting_points=[(x0, 'r*')])
 
 
 def global_optimization(function):
@@ -635,10 +649,13 @@ def global_optimization(function):
     print('Solution with the most proportional change: {}'.format(proportional_optimal_point))
     print('Solution with the least change in X: {}'.format(least_change_x_optimal_point))
     print('Solution with the least change in Y: {}'.format(least_change_y_optimal_point))
-    plot_function_contour_with_samples(function,
-                                       optim_points.get_points(),
-                                       show_arrows=False,
-                                       interesting_points=interesting_points)
+
+    # If the parameter space is 2D, show a plot
+    if func.dimensionality==2:
+        plot_function_contour_with_samples(function,
+                                           optim_points.get_points(),
+                                           show_arrows=False,
+                                           interesting_points=interesting_points)
 
 
 def main():
