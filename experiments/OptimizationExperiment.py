@@ -7,25 +7,23 @@ from scipy import linalg
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
-# TODO: package the optimizer in a class that only takes the Casadi function and returns a special solution object
-# TODO: to check if the solution is unique, check that the Hessian has no null eigen values (approximately)
-# TODO: if after regular optimization the Hessian has a null eigen value, we can start the basinhopping search
-# TODO: give a budget to the optimizer for the number of function evaluations
-# TODO: import more Blender functions with two variables (two cube stack)
-# TODO: make it possible to not provide the Hessian in Casadi Function
-# TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
-# TODO: run K-Medoid on the set of points
-# TODO: find an order for the medoids
-# TODO: try nonlinear-PCA on the set of points
-# TODO: show a slider (1D or 2D) for exploring the solution set, and by changing it, show the position on the 2D plot
-# TODO: early stop if the solution is unique (no basin), then switch to global optimization until the budget is over
-# TODO: try trust region methods for local optimization
-# TODO: try to see if an increase in the stepsize improves the spread of samples
-# TODO: in priority, try to change the basinhopping instead of reinventing the wheel, bias steps with the Hessian
+# TODO: Improve the accept bounds in the global optimization
 # TODO: make the whole algorithm work with bounded functions
 #        - Use L-BFGS-B for local optimization
 #        - Use accept_test argument in basinhopping to set bounds
 #          See last example of: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.basinhopping.html
+# TODO: Plotting function in the optimization wrapper
+# TODO: Remove the old optimization functions
+# TODO: import more Blender functions with two variables (two cube stack)
+# TODO: make it possible to not provide the Hessian in Casadi Function
+# TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
+# TODO: run K-Medoid on the set of all optimal points
+# TODO: find an order for the medoids
+# TODO: try nonlinear-PCA on the set of points
+# TODO: show a slider (1D or 2D) for exploring the solution set, and by changing it, show the position on the 2D plot
+# TODO: try trust region methods for local optimization
+# TODO: try to see if an increase in the stepsize improves the spread of samples
+# TODO: in priority, try to change the basinhopping instead of reinventing the wheel, bias steps with the Hessian
 # TODO: animation of the optimization plot
 # TODO: minimize the list of functions with different optimizers and show different animations
 
@@ -306,31 +304,57 @@ class Optimizer:
         self.bounds = bounds
         # Initial point for optimization
         self.x0 = x0
-        # Best optimum found so far (by default: the initial point)
-        self.best_optimum = x0
+        # Budget of function evaluation left
+        self.budget = 0
+        # Total time (in seconds) spent optimizing
+        self.total_time = 0.0
+        # Best optimal point found so far (by default: the initial point)
+        self.best_optimal = x0
         self.best_value = self.function.evaluate(x0)
         # Hessian of the best 
         self.best_hessian = None
 
-    def __update_best_optimum(self, res):
+    def get_total_time(self):
+        """ Return total optimization time """
+        return self.total_time
+
+    def get_budget(self):
+        """ Return the remaining budget for function evaluation """
+        return self.budget
+
+    def increase_budget(self, additional_budget):
         """
-        Private function to update the best optimum from an OptimizeResult object
+        Increase the budget of function evaluation
+        """
+        self.budget = self.budget + additional_budget
+
+    def __update_time_and_budget(self, elapsed_time, res):
+        """
+        Update the total time spent optimizing
+        Update the budget of function evaluation
+        """
+        self.total_time = self.total_time + elapsed_time
+        self.budget = max(self.budget - res.nfev, 0)
+
+    def __update_best_optimal(self, res):
+        """
+        Private function to update the best optimal point from an OptimizeResult object
         """
         # Only if the optimization was successful, or if the successful flag is not set
         if (hasattr(res, 'success') and res.success) or not hasattr(res, 'success'):
-            # Update the best optimum
+            # Update the best optimal point
             if res.fun < self.best_value:
-                print('Found a better optimum: {}'.format(res.x))
-                self.best_optimum = res.x
+                print('Found a better optimal point: {}'.format(res.x))
+                self.best_optimal = res.x
                 self.best_value = res.fun
                 self.best_hessian = self.function.hessian(res.x)
                 # TODO: Use the approximated Hessian if it's not available, otherwise compute it directly
                 # self.best_hessian = res.hess
 
-    def __is_best_optimum_unique(self, threshold=1e-2):
+    def __is_best_optimal_unique(self, threshold=1e-2):
         """
         Check if there is potentially a set of 
-        Look at the eigen values of the Hessian around the optimum,
+        Look at the eigen values of the Hessian around the current best optimal point,
         if at least one eigen value is close to zero,
         then the solution may not be unique and the function is underdetermined
         Hessian matrices are symmetric, so their eigenvalues are real numbers
@@ -343,12 +367,13 @@ class Optimizer:
             eigenvalues = linalg.eigvalsh(np.array(self.best_hessian))
             for eigenvalue in eigenvalues:
                 if abs(eigenvalue) < threshold:
-                    # If at least one eigenvalue is close to zero, the optimum may not be unique
+                    # If at least one eigenvalue is close to zero, the optimal point may not be unique
                     return False
             return True
         else:
-            # If the Hessian at the best optimum is not available,
+            # If the Hessian at the best optimal point is not available,
             # we cannot decide and thus return False
+            # so that we better investigate with the local search
             return False
 
     def local_optimization(self):
@@ -361,7 +386,7 @@ class Optimizer:
 
         start_time = default_timer()
         res = minimize(self.function.evaluate,
-                       self.function.evaluate,
+                       self.x0,
                        method='L-BFGS-B',
                        jac=self.function.derivative,
                        # hess=self.function.hessian,
@@ -369,15 +394,16 @@ class Optimizer:
                        callback=optim_history.add_sample,
                        options={'gtol': 1e-6, 'disp': True})
         end_time = default_timer()
-        print('Optimization time: {} s'.format(end_time - start_time))
-        # Update the best optimum
-        self.__update_best_optimum(res)
+        print('Local optimization time: {} s'.format(end_time - start_time))
+        # Updates after optimization
+        self.__update_best_optimal(res)
+        self.__update_time_and_budget(end_time - start_time, res)
 
     def global_optimization(self):
         """
         Run global optimization on the problem
         Use basinhopping method
-        Starts from the already known best optimum, if it has been found by local search
+        Starts from the already known best optimal point, if it has been found by local search
         """
         start_time = default_timer()
         minimizer_kwargs = {
@@ -386,22 +412,69 @@ class Optimizer:
             'bounds': self.bounds
         }
         res = basinhopping(self.function.evaluate,
-                           self.best_optimum,
+                           self.best_optimal,
                            minimizer_kwargs=minimizer_kwargs,
-                           niter=200,
+                           niter=self.budget,
                            disp=None)
         end_time = default_timer()
-        print('Optimization time: {} s'.format(end_time - start_time))
-        # Update the best optimum
-        self.__update_best_optimum(res)
+        print('Global optimization time: {} s'.format(end_time - start_time))
+        # Updates after optimization
+        self.__update_best_optimal(res)
+        self.__update_time_and_budget(end_time - start_time, res)
 
-    def optimize(self):
+    def explore_optimality_region(self):
         """
-        Optimize the function in a two stage method
+        Explore the region of optimality of the function to optimize
+        Call this function when the problem is underdetermined to find other optimal points
+        """
+        optim_points = OptimizationAcceptedPointList()
+
+        start_time = default_timer()
+        minimizer_kwargs = {
+            'method':'L-BFGS-B',
+            'jac': self.function.derivative,
+            'bounds': self.bounds
+        }
+        res = basinhopping(self.function.evaluate,
+                           self.best_optimal,
+                           minimizer_kwargs=minimizer_kwargs,
+                           niter=self.budget,
+                           callback=optim_points.basinhopping_callback,
+                           disp=None)
+        end_time = default_timer()
+        print('Optimal region exploration time: {} s'.format(end_time - start_time))
+
+        # Update the budget
+        self.__update_time_and_budget(end_time - start_time, res)
+
+        # Sort points per increasing f value
+        optim_points.sort_points()
+        # List interesting points
+        nearest_optimal_point = optim_points.nearest_point(self.x0)
+        farthest_optimal_point = optim_points.farthest_point(self.x0)
+        delta_optimal_point = optim_points.most_delta_change_point(self.x0)
+        proportional_optimal_point = optim_points.most_proportional_change_point(self.x0)
+
+    def optimize(self, budget):
+        """
+        Optimize the function in a two stage method:
         1) Local optimization
-        2) If the solution is underdetermined, try to find other solutions
+        2) If the solution is determined, use the rest of the budget to find the global optimum
+        3) If the solution is underdetermined, use the rest of the budget to explore the region of optimality
+        Parameter budget gives the number of maximum function evaluation before giving an answer
         """
-        pass
+        self.budget = budget
+        print('Launching local optimization...')
+        self.local_optimization()
+        sol_determined = self.__is_best_optimal_unique()
+        if sol_determined:
+            # Global optimization
+            print('Launching global optimization...')
+            self.global_optimization()
+        else:
+            # Explore the region of optimality
+            print('Exploring the local region...')
+            self.explore_optimality_region()
 
     def plot(self):
         """
@@ -788,11 +861,11 @@ def main():
     global_optimization(functions['underdetermined_disk'])
     global_optimization(functions['underdetermined_arm'])
 
-    # optimizer = Optimizer(functions['rosen']['function'],
-    #                       functions['rosen']['bounds'],
-    #                       functions['rosen']['starting_point'])
-    # optimizer.global_optimization()
-    # print(optimizer._Optimizer__is_best_optimum_unique())
+    # optimizer = Optimizer(functions['underdetermined_disk']['function'],
+    #                       functions['underdetermined_disk']['bounds'],
+    #                       functions['underdetermined_disk']['starting_point'])
+    # optimizer.optimize(200)
+    # print('Total optimization time: {} s'.format(optimizer.get_total_time()))
 
 
 if __name__ == "__main__":
