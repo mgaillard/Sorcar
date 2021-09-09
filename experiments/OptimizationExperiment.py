@@ -3,15 +3,17 @@ from timeit import default_timer
 import numpy as np
 from casadi import *
 from scipy.optimize import minimize, basinhopping
+from scipy import linalg
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
+# TODO: package the optimizer in a class that only takes the Casadi function and returns a special solution object
+# TODO: to check if the solution is unique, check that the Hessian has no null eigen values (approximately)
+# TODO: if after regular optimization the Hessian has a null eigen value, we can start the basinhopping search
+# TODO: give a budget to the optimizer for the number of function evaluations
 # TODO: import more Blender functions with two variables (two cube stack)
 # TODO: make it possible to not provide the Hessian in Casadi Function
 # TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
-# TODO: package the optimizer in a class that only takes the Casadi function and returns a special solution object
-# TODO: to check if the solution is unique, check that the Hessian has no null eigen values
-# TODO: if after regular optimization the Hessian has a null eigen value, we can start the basinhopping search
 # TODO: run K-Medoid on the set of points
 # TODO: find an order for the medoids
 # TODO: try nonlinear-PCA on the set of points
@@ -287,6 +289,125 @@ class CasadiFunction:
         self.hess_func = external('h', filename)
         # Infer the dimensionality from the function input size
         self.dimensionality = self.func.size1_in(0)
+
+
+class Optimizer:
+    """
+    An optimizer that returns different configurations
+    """
+
+    def __init__(self, function, bounds, x0):
+        """
+        Initialize the optimizer
+        """
+        # Function to optimize
+        self.function = function
+        # Bounds of parameters
+        self.bounds = bounds
+        # Initial point for optimization
+        self.x0 = x0
+        # Best optimum found so far (by default: the initial point)
+        self.best_optimum = x0
+        self.best_value = self.function.evaluate(x0)
+        # Hessian of the best 
+        self.best_hessian = None
+
+    def __update_best_optimum(self, res):
+        """
+        Private function to update the best optimum from an OptimizeResult object
+        """
+        # Only if the optimization was successful, or if the successful flag is not set
+        if (hasattr(res, 'success') and res.success) or not hasattr(res, 'success'):
+            # Update the best optimum
+            if res.fun < self.best_value:
+                print('Found a better optimum: {}'.format(res.x))
+                self.best_optimum = res.x
+                self.best_value = res.fun
+                self.best_hessian = self.function.hessian(res.x)
+                # TODO: Use the approximated Hessian if it's not available, otherwise compute it directly
+                # self.best_hessian = res.hess
+
+    def __is_best_optimum_unique(self, threshold=1e-2):
+        """
+        Check if there is potentially a set of 
+        Look at the eigen values of the Hessian around the optimum,
+        if at least one eigen value is close to zero,
+        then the solution may not be unique and the function is underdetermined
+        Hessian matrices are symmetric, so their eigenvalues are real numbers
+        If all eigenvalues are positive, the Hessian is positive-definite => local minimum
+        If all eigenvalues are negative, the Hessian is negative-definite => local maximum
+        If eigenvalues are mixed (positive, negative) => saddle point
+        If either eigenvalue is zero, the Hessian needs more investigation
+        """
+        if self.best_hessian is not None:
+            eigenvalues = linalg.eigvalsh(np.array(self.best_hessian))
+            for eigenvalue in eigenvalues:
+                if abs(eigenvalue) < threshold:
+                    # If at least one eigenvalue is close to zero, the optimum may not be unique
+                    return False
+            return True
+        else:
+            # If the Hessian at the best optimum is not available,
+            # we cannot decide and thus return False
+            return False
+
+    def local_optimization(self):
+        """
+        Run local optimization on the problem
+        Uses L-BFGS-B if gradient and bounds are available
+        """
+        optim_history = OptimizationHistory()
+        optim_history.add_sample(self.x0)
+
+        start_time = default_timer()
+        res = minimize(self.function.evaluate,
+                       self.function.evaluate,
+                       method='L-BFGS-B',
+                       jac=self.function.derivative,
+                       # hess=self.function.hessian,
+                       bounds=self.bounds,
+                       callback=optim_history.add_sample,
+                       options={'gtol': 1e-6, 'disp': True})
+        end_time = default_timer()
+        print('Optimization time: {} s'.format(end_time - start_time))
+        # Update the best optimum
+        self.__update_best_optimum(res)
+
+    def global_optimization(self):
+        """
+        Run global optimization on the problem
+        Use basinhopping method
+        Starts from the already known best optimum, if it has been found by local search
+        """
+        start_time = default_timer()
+        minimizer_kwargs = {
+            'method':'L-BFGS-B',
+            'jac': self.function.derivative,
+            'bounds': self.bounds
+        }
+        res = basinhopping(self.function.evaluate,
+                           self.best_optimum,
+                           minimizer_kwargs=minimizer_kwargs,
+                           niter=200,
+                           disp=None)
+        end_time = default_timer()
+        print('Optimization time: {} s'.format(end_time - start_time))
+        # Update the best optimum
+        self.__update_best_optimum(res)
+
+    def optimize(self):
+        """
+        Optimize the function in a two stage method
+        1) Local optimization
+        2) If the solution is underdetermined, try to find other solutions
+        """
+        pass
+
+    def plot(self):
+        """
+        Plot the function in 2D
+        """
+        pass
 
 
 def generate_rosen():
@@ -666,6 +787,12 @@ def main():
     global_optimization(functions['underdetermined_circle'])
     global_optimization(functions['underdetermined_disk'])
     global_optimization(functions['underdetermined_arm'])
+
+    # optimizer = Optimizer(functions['rosen']['function'],
+    #                       functions['rosen']['bounds'],
+    #                       functions['rosen']['starting_point'])
+    # optimizer.global_optimization()
+    # print(optimizer._Optimizer__is_best_optimum_unique())
 
 
 if __name__ == "__main__":
