@@ -7,7 +7,7 @@ from scipy import linalg
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
-# TODO: when running global optimization, start from random points with basinhopping
+# TODO: add legend in the 2D plot for specific points
 # TODO: import more Blender functions with two variables (two cube stack)
 # TODO: make it possible to not provide the Hessian in Casadi Function
 # TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
@@ -16,8 +16,8 @@ from matplotlib import ticker
 # TODO: try nonlinear-PCA on the set of points
 # TODO: show a slider (1D or 2D) for exploring the solution set, and by changing it, show the position on the 2D plot
 # TODO: try trust region methods for local optimization
-# TODO: try to see if an increase in the stepsize improves the spread of samples
 # TODO: try to parallelize the algorithm to speed up optimization
+# TODO: when running global optimization, start from random points with basinhopping
 # TODO: try to propose more than one option when giving a delta solution or a proportional solution
 # TODO: change the take step function for exploration so that it takes steps based on the Hessian
 # TODO: animation of the optimization plot
@@ -122,13 +122,21 @@ class OptimizationAcceptedPointList:
         We look for the point whose range in proportion is the smallest among all parameters
         For example in 2D: we look at pX=X_2-X_1 and pY=Y_2-Y_1 and compute the range max(pX, pY) - min(pX, pY)
                            we select the point whose range is the lowest
-        Warning: if the starting configuration has one coordinate that is zero, this may fail
+        Warning: if the starting configuration has one coordinate that is zero, we ignore this coordinate
         Geometric interpretation: closest to the line starting from the origin and going to x0
         """
+        def proportionality_range(x, v):
+            array_x = np.array(x)
+            # Divide only where the denominator is non null
+            divide_max = np.divide(v, array_x, out=np.full_like(v, -inf), where=(array_x!=0.0))
+            divide_min = np.divide(v, array_x, out=np.full_like(v, inf), where=(array_x!=0.0))
+            # Return the range of proportionality coefficients
+            return np.amax(divide_max) - np.amin(divide_min)
+
         best = self.points[0][0]
-        best_range = np.amax(best / x) - np.amin(best / x)
+        best_range = proportionality_range(x, best)
         for i in range(len(self.points)):
-            curr_range = np.amax(self.points[i][0] / x) - np.amin(self.points[i][0] / x)
+            curr_range = proportionality_range(x, self.points[i][0])
             if curr_range < best_range:
                 best = self.points[i][0]
                 best_range = curr_range
@@ -836,9 +844,11 @@ def main():
 
     functions_to_optimize = [
         'rosen',
+        'underdetermined_linear',
         'underdetermined_circle',
         'underdetermined_disk',
-        'underdetermined_arm'
+        'underdetermined_arm',
+        'sorcar_cube_size_underdetermined'
     ]
 
     # Optimization of the functions
