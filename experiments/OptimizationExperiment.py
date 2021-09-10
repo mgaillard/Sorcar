@@ -7,11 +7,7 @@ from scipy import linalg
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
-# TODO: Improve the accept bounds in the global optimization
-# TODO: make the whole algorithm work with bounded functions
-#        - Use L-BFGS-B for local optimization
-#        - Use accept_test argument in basinhopping to set bounds
-#          See last example of: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.basinhopping.html
+# TODO: when running global optimization, start from random points with basinhopping
 # TODO: import more Blender functions with two variables (two cube stack)
 # TODO: make it possible to not provide the Hessian in Casadi Function
 # TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
@@ -21,7 +17,9 @@ from matplotlib import ticker
 # TODO: show a slider (1D or 2D) for exploring the solution set, and by changing it, show the position on the 2D plot
 # TODO: try trust region methods for local optimization
 # TODO: try to see if an increase in the stepsize improves the spread of samples
-# TODO: in priority, try to change the basinhopping instead of reinventing the wheel, bias steps with the Hessian
+# TODO: try to parallelize the algorithm to speed up optimization
+# TODO: try to propose more than one option when giving a delta solution or a proportional solution
+# TODO: change the take step function for exploration so that it takes steps based on the Hessian
 # TODO: animation of the optimization plot
 # TODO: minimize the list of functions with different optimizers and show different animations
 
@@ -292,14 +290,41 @@ class Optimizer:
     An optimizer that returns different configurations
     """
 
+    class _BasinhoppingTakeStepBounds:
+        """
+        Specific class for overriding take_step in the basinhopping method
+        Normalize the coordinates between the bounds
+        """
+        def __init__(self, bounds_xmin, bounds_xmax, stepsize=0.5):
+            self.bounds_xmin = bounds_xmin
+            self.bounds_xmax = bounds_xmax
+            self.stepsize = stepsize
+            self.rng = np.random.default_rng()
+
+        def __call__(self, x):
+            # The stepsize can be changed by the basinhopping method
+            s = self.stepsize
+            # Generate step in [-1.0; 1.0] when s=1.0
+            step = self.rng.uniform(-s, s, x.shape)
+            # Remap the value with the range
+            x = x + step * (self.bounds_xmax - self.bounds_xmin)
+            return x
+
     def __init__(self, function, bounds, x0):
         """
         Initialize the optimizer
         """
         # Function to optimize
         self.function = function
-        # Bounds of parameters
+        # Bounds of parameters in SciPy format and in Numpy format
         self.bounds = bounds
+        self.bounds_xmin = np.zeros(len(self.bounds))
+        self.bounds_xmax = np.zeros(len(self.bounds))
+        for i in range(len(self.bounds)):
+            self.bounds_xmin[i] = self.bounds[i][0]
+            self.bounds_xmax[i] = self.bounds[i][1]
+        # Function to take normalized steps with the basinhopping method
+        self.__basinhopping_take_step_bounds = self._BasinhoppingTakeStepBounds(self.bounds_xmin, self.bounds_xmax)
         # Initial point for optimization
         self.x0 = x0
         # Budget of function evaluation left
@@ -376,6 +401,16 @@ class Optimizer:
             # so that we better investigate with the local search
             return False
 
+    def __basinhopping_accept_test_bounds(self, **kwargs):
+        """
+        Specific function for overriding accept_test in the basinhopping method
+        Only accept steps that are in within the bounds
+        """
+        x = kwargs["x_new"]
+        tmax = bool(np.all(x <= self.bounds_xmax))
+        tmin = bool(np.all(x >= self.bounds_xmin))
+        return tmax and tmin
+
     def local_optimization(self):
         """
         Run local optimization on the problem
@@ -407,14 +442,19 @@ class Optimizer:
         """
         start_time = default_timer()
         minimizer_kwargs = {
-            'method':'BFGS',
+            'method':'L-BFGS-B',
             'jac': self.function.derivative,
             'bounds': self.bounds
         }
         res = basinhopping(self.function.evaluate,
                            self.best_optimal,
-                           minimizer_kwargs=minimizer_kwargs,
                            niter=self.budget,
+                           T=1.0,         # Temperature for global optimization is the default value: 1.0
+                           stepsize=0.25, # Step size for global optimization is one quarter of the range
+                           minimizer_kwargs=minimizer_kwargs,
+                           take_step=self.__basinhopping_take_step_bounds,
+                           accept_test=self.__basinhopping_accept_test_bounds,
+                           interval=50,
                            disp=None)
         end_time = default_timer()
         print('Global optimization time: {} s'.format(end_time - start_time))
@@ -426,20 +466,26 @@ class Optimizer:
         """
         Explore the region of optimality of the function to optimize
         Call this function when the problem is underdetermined to find other optimal points
+        The temperature is set to a lower value 
         """
         optim_points = OptimizationAcceptedPointList()
 
         start_time = default_timer()
         minimizer_kwargs = {
-            'method':'BFGS',
+            'method':'L-BFGS-B',
             'jac': self.function.derivative,
             'bounds': self.bounds
         }
         res = basinhopping(self.function.evaluate,
                            self.best_optimal,
-                           minimizer_kwargs=minimizer_kwargs,
                            niter=self.budget,
+                           T=0.1,         # Temperature for exploration is less than the default value: 0.1
+                           stepsize=0.05, # Step size for exploration is 5% of the range
+                           minimizer_kwargs=minimizer_kwargs,
+                           take_step=self.__basinhopping_take_step_bounds,
+                           accept_test=self.__basinhopping_accept_test_bounds,
                            callback=optim_points.basinhopping_callback,
+                           interval=50,
                            disp=None)
         end_time = default_timer()
         print('Optimal region exploration time: {} s'.format(end_time - start_time))
