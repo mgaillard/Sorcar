@@ -7,9 +7,11 @@ from scipy import linalg
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
+# TODO: when doing global optimization, look at the history and check if there are many optimal points
+# TODO: in the Taylor function, plot the eigen vectors of the Hessian matrix
 # TODO: add legend in the 2D plot for specific points
 # TODO: import more Blender functions with two variables (two cube stack)
-# TODO: make it possible to not provide the Hessian in Casadi Function
+# TODO: import the Blender functions for the robotic arm (close edit, very far edit)
 # TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
 # TODO: run K-Medoid on the set of all optimal points
 # TODO: find an order for the medoids
@@ -181,14 +183,16 @@ class CasadiFunction:
     Jacobian and Hessian matrices are computed using automatic differentiation
     """
 
-    def __init__(self):
+    def __init__(self, activate_hessian=True):
         """
         Initialize the function to optimize and its gradient
+        Parameter activate_hessian is a boolean to activate computation/loading of the Hessian
         """
         self.dimensionality = 0
         self.func = None
         self.grad_func = None
         self.hess_func = None
+        self.activate_hessian = activate_hessian
 
     def set_expression(self, expression, symbols):
         """
@@ -204,13 +208,18 @@ class CasadiFunction:
         # Build CasADi Function for evaluating the gradient of the function to optimize
         grad_expression = gradient(expression, symbols)
         self.grad_func = Function('g', [symbols], [grad_expression], function_options)
-        # Buils CasADi Function for evaluating the Hessian of the function to optimize
-        hess_expression, g = hessian(expression, symbols)
-        self.hess_func = Function('h', [symbols], [hess_expression], function_options)
+        # Only compute the Hessian if it is activated
+        if self.activate_hessian:
+            # Build CasADi Function for evaluating the Hessian of the function to optimize
+            hess_expression, g = hessian(expression, symbols)
+            self.hess_func = Function('h', [symbols], [hess_expression], function_options)
+        else:
+            self.hess_func = None
 
     def evaluate(self, x):
+        # Check that the function is defined
         # Check that the input has the right dimensionality
-        if len(x) == self.dimensionality:
+        if (self.func is not None) and (len(x) == self.dimensionality):
             # Call the function with the parameters
             result = self.func.call([x])
             # Convert the output to float
@@ -219,8 +228,9 @@ class CasadiFunction:
         return None
 
     def derivative(self, x):
+        # Check that the gradient function is defined
         # Check that the input has the right dimensionality
-        if len(x) == self.dimensionality:
+        if (self.grad_func is not None) and (len(x) == self.dimensionality):
             # Call the function with the parameters
             results = self.grad_func.call([x])
             # Convert the output to float
@@ -231,9 +241,14 @@ class CasadiFunction:
         # By default, the output is None
         return None
 
+    def is_hessian_active(self):
+        """ Return true if the Hessian is activated, false otherwise """
+        return (self.hess_func is not None)
+
     def hessian(self, x):
+        # Check that the Hessian function is defined
         # Check that the input has the right dimensionality
-        if len(x) == self.dimensionality:
+        if (self.hess_func is not None) and (len(x) == self.dimensionality):
             # Call the function with the parameters
             results = self.hess_func.call([x])
             # Convert the output to float
@@ -251,23 +266,37 @@ class CasadiFunction:
         """
         Second order approximation of the function using the gradient and the Hessian
         """
-        dx = np.array(p) - np.array(x)
-        f = np.array(self.evaluate(x))
-        g = np.array(self.derivative(x))
-        H = np.array(self.hessian(x))
 
-        approximation = f + np.dot(g, dx) + 0.5 * np.dot(dx, np.matmul(H, dx))
+        # Check that all functions are defined
+        # Check that both inputs have the right dimensionality
+        if ((self.func is not None)
+        and (self.grad_func is not None)
+        and (self.hess_func is not None)
+        and (len(x) == self.dimensionality)
+        and (len(p) == self.dimensionality)):
 
-        return approximation
+            dx = np.array(p) - np.array(x)
+            f = np.array(self.evaluate(x))
+            g = np.array(self.derivative(x))
+            H = np.array(self.hessian(x))
+
+            approximation = f + np.dot(g, dx) + 0.5 * np.dot(dx, np.matmul(H, dx))
+
+            return approximation
+        else:
+            return None
 
     def generate_code(self, filename):
         """
         Generate C code associated to the functions for later JIT compilation
         """
         generator = CodeGenerator(filename)
-        generator.add(self.func)
-        generator.add(self.grad_func)
-        generator.add(self.hess_func)
+        if self.func is not None:
+            generator.add(self.func)
+        if self.grad_func is not None:
+            generator.add(self.grad_func)
+        if self.hess_func is not None:
+            generator.add(self.hess_func)
         generator.generate()
 
     def load_and_jit_compile_code(self, filename):
@@ -277,20 +306,28 @@ class CasadiFunction:
         """
         importer = Importer(filename, 'clang')
         self.func = external('f', importer)
-        self.grad_func = external('g', importer)
-        self.hess_func = external('h', importer)
         # Infer the dimensionality from the function input size
         self.dimensionality = self.func.size1_in(0)
+        self.grad_func = external('g', importer)
+        # Only load the Hessian if it is activated
+        if self.activate_hessian:
+            self.hess_func = external('h', importer)
+        else:
+            self.hess_func = None
 
     def load_binary_code(self, filename):
         """
         Load a previously saved function already compiled
         """
         self.func = external('f', filename)
-        self.grad_func = external('g', filename)
-        self.hess_func = external('h', filename)
         # Infer the dimensionality from the function input size
         self.dimensionality = self.func.size1_in(0)
+        self.grad_func = external('g', filename)
+        # Only load the Hessian if it is activated
+        if self.activate_hessian:
+            self.hess_func = external('h', filename)
+        else:
+            self.hess_func = None
 
 
 class Optimizer:
@@ -380,9 +417,23 @@ class Optimizer:
                 print('Found a better optimal point: {}'.format(res.x))
                 self.best_optimal = res.x
                 self.best_value = res.fun
-                self.best_hessian = self.function.hessian(res.x)
-                # TODO: Use the approximated Hessian if it's not available, otherwise compute it directly
-                # self.best_hessian = res.hess
+                if self.function.is_hessian_active():
+                    # Compute the Hessian
+                    self.best_hessian = self.function.hessian(res.x)
+                elif hasattr(res, 'hess') and res.hess is not None:
+                    # Use the approximated Hessian if Hessian is not available
+                    self.best_hessian = res.hess
+                elif hasattr(res, 'hess_inv') and res.hess_inv is not None:
+                    # Use the pseudo inverse of the inverse of the Hessian (when using BFGS)
+                    if hasattr(res, 'todense'):
+                        # For L-BFGS-B, which estimates the Hessian inverse implicitly
+                        hess_inv = res.hess_inv.todense()
+                    else:
+                        # For BFGS, which estimates the Hessian inverse explicitly
+                        hess_inv = res.hess_inv
+                    self.best_hessian = linalg.pinvh(hess_inv)
+                else:
+                    self.best_hessian = None
 
     def __is_best_optimal_unique(self, threshold=1e-2):
         """
