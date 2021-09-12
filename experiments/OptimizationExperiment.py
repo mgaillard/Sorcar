@@ -688,7 +688,7 @@ def generate_sorcar_cube_size_underdetermined():
     return {
         'function': function,
         'bounds': [(0.0, 5.0), (0.0, 5.0)],
-        'starting_point': [2.0, 0.0]
+        'starting_point': [1.5, 0.5]
     }
 
 
