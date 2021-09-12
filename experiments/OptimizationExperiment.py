@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 
 # TODO: when doing global optimization, look at the history and check if there are many optimal points
-# TODO: in the Taylor function, plot the eigen vectors of the Hessian matrix
 # TODO: add legend in the 2D plot for specific points
 # TODO: import more Blender functions with two variables (two cube stack)
 # TODO: import the Blender functions for the robotic arm (close edit, very far edit)
@@ -824,6 +823,9 @@ def plot_surface_and_taylor(function, point):
             Z2[i, j] = func.taylor(point, [X[i, j], Y[i, j]])
             D[i, j] = abs(Z1[i, j] - Z2[i, j])
 
+    # Compute the eigen vectors
+    eigenvalues, eigenvectors = linalg.eigh(np.array(func.hessian(point)))
+
     contour_lines = 20 # Number of contour lines
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
     ax1.contourf(X, Y, Z1, contour_lines, cmap=plt.cm.jet)
@@ -832,6 +834,12 @@ def plot_surface_and_taylor(function, point):
     ax2.plot(point[0], point[1], 'r*', markersize=10)
     ax3.contourf(X, Y, D, contour_lines, cmap=plt.cm.jet)
     ax3.plot(point[0], point[1], 'r*', markersize=10)
+
+    # Draw arrows for eigen values
+    ax2.arrow(point[0], point[1], eigenvectors[0][0], eigenvectors[0][1], width=0.003, color="black")
+    print('Eigen value for black arrow: {}'.format(eigenvalues[0]))
+    ax2.arrow(point[0], point[1], eigenvectors[1][0], eigenvectors[1][1], width=0.003, color="white")
+    print('Eigen value for white arrow: {}'.format(eigenvalues[1]))
 
     plt.show()
 
