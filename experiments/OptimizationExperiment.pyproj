@@ -23,7 +23,13 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Functions.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="OptimizationExperiment.py" />
+    <Compile Include="Optimizer.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env\">
