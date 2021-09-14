@@ -8,8 +8,8 @@ from scipy import linalg
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
-# TODO: when doing global optimization, look at the history and check if there are many optimal points
-# TODO: add legend in the 2D plot for specific points
+# TODO: separate the code in different files, one file per class in one module
+# TODO: try to use the optimizer from the Blender extension
 # TODO: import more Blender functions with two variables (two cube stack)
 # TODO: import the Blender functions for the robotic arm (close edit, very far edit)
 # TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
@@ -18,10 +18,11 @@ from matplotlib import ticker
 # TODO: try nonlinear-PCA on the set of points
 # TODO: show a slider (1D or 2D) for exploring the solution set, and by changing it, show the position on the 2D plot
 # TODO: try trust region methods for local optimization
-# TODO: try to parallelize the algorithm to speed up optimization
+# TODO: parallelize to speed up optimization, run the algorithm many time in parallel and aggregate results
 # TODO: when running global optimization, start from random points with basinhopping
 # TODO: try to propose more than one option when giving a delta solution or a proportional solution
 # TODO: change the take step function for exploration so that it takes steps based on the Hessian
+# TODO: add legend in the 2D plot for specific points
 # TODO: animation of the optimization plot
 # TODO: minimize the list of functions with different optimizers and show different animations
 
