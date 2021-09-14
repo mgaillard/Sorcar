@@ -1,4 +1,5 @@
 import math
+import random
 from timeit import default_timer
 import numpy as np
 from casadi import *
@@ -69,10 +70,10 @@ class OptimizationAcceptedPointList:
         """
         max_dist = 0.0
         for i in range(len(self.points)):
-            for j in range(len(self.points)):
-                if i < j:
-                    d = np.linalg.norm(self.points[i][0] - self.points[j][0])
-                    max_dist = max(max_dist, d)
+            # Pick a random other point from the distribution
+            j = random.randrange(len(self.points))
+            d = np.linalg.norm(self.points[i][0] - self.points[j][0])
+            max_dist = max(max_dist, d)
         
         return (max_dist <= threshold)
 
@@ -424,12 +425,9 @@ class Optimizer:
                     self.best_hessian = res.hess
                 elif hasattr(res, 'hess_inv') and res.hess_inv is not None:
                     # Use the pseudo inverse of the inverse of the Hessian (when using BFGS)
-                    if hasattr(res, 'todense'):
-                        # For L-BFGS-B, which estimates the Hessian inverse implicitly
-                        hess_inv = res.hess_inv.todense()
-                    else:
-                        # For BFGS, which estimates the Hessian inverse explicitly
-                        hess_inv = res.hess_inv
+                    # For L-BFGS-B, which estimates the Hessian inverse implicitly
+                    # For BFGS, which estimates the Hessian inverse explicitly
+                    hess_inv = res.hess_inv.todense()
                     self.best_hessian = linalg.pinvh(hess_inv)
                 else:
                     self.best_hessian = None
@@ -498,6 +496,8 @@ class Optimizer:
         Use basinhopping method
         Starts from the already known best optimal point, if it has been found by local search
         """
+        optim_points = OptimizationAcceptedPointList()
+        
         start_time = default_timer()
         minimizer_kwargs = {
             'method':'L-BFGS-B',
@@ -512,6 +512,7 @@ class Optimizer:
                            minimizer_kwargs=minimizer_kwargs,
                            take_step=self.__basinhopping_take_step_bounds,
                            accept_test=self.__basinhopping_accept_test_bounds,
+                           callback=optim_points.basinhopping_callback,
                            interval=50,
                            disp=None)
         end_time = default_timer()
@@ -519,6 +520,9 @@ class Optimizer:
         # Updates after optimization
         self.__update_best_optimal(res)
         self.__update_time_and_budget(end_time - start_time, res)
+        # Check that the optimal point is unique
+        if not optim_points.is_unique_point():
+            print('Warning: Global optimization yielded multiple optima! The solution may be undetermined.')
 
     def explore_optimality_region(self):
         """
