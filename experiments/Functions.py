@@ -40,6 +40,23 @@ class CasadiFunction:
         else:
             self.hess_func = None
 
+    def set_functions(self, func, grad_func, hess_func=None):
+        """
+        Set the function to optimize.
+        The function is directly given, no need to build the gradient nor the Hessian.
+        """
+        # Directly set the function
+        self.func = func
+        # Infer the dimensionality from the function input size
+        self.dimensionality = self.func.size1_in(0)
+        # Directly set the gradient function
+        self.grad_func = grad_func
+        # Directly set the Hessian function
+        self.hess_func = hess_func
+        # If the Hessian function was not given, deactivate it
+        if self.hess_func:
+            self.activate_hessian = False
+
     def evaluate(self, x):
         # Check that the function is defined
         # Check that the input has the right dimensionality

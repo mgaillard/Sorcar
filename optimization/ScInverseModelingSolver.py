@@ -4,6 +4,7 @@ from time import perf_counter
 import numpy as np
 from scipy.optimize import minimize, Bounds
 from ..debug import log
+from ..experiments.Functions import CasadiFunction
 
 class ScInverseModelingSolver:
 
@@ -13,9 +14,7 @@ class ScInverseModelingSolver:
         self.initial_float_properties = initial_float_properties
         self.float_properties_bounds = float_properties_bounds
         self.property_map = self.create_properties_map(self.initial_float_properties)
-        self.autodiff_cost_function = None
         self.context = context
-        self.time_start = 0
 
 
     @staticmethod
@@ -97,80 +96,93 @@ class ScInverseModelingSolver:
 
     
     def evaluate_cost_function(self, x):
-        # If autodiff is enabled, return error + gradient, otherwise just the gradient
-        if self.autodiff_cost_function is not None:
-            # Just a reference for more concise code
-            autodiff_variables = self.curr_tree.autodiff_variables
-            # Update parameters in the tree directly in the autodiff_variables object
-            float_properties = self.flat_vector_to_properties(self.property_map, x)
-            for property_name in float_properties:
-                if autodiff_variables.has_variable(property_name):
-                    autodiff_variables.set_variable_value(property_name, float_properties[property_name])
-            # Evaluate the cost and the gradient
-            error = autodiff_variables.evaluate_value(self.autodiff_cost_function)
-            gradient_properties = autodiff_variables.evaluate_gradient(self.autodiff_cost_function)
-            gradient = self.properties_to_flat_vector(self.property_map, gradient_properties)
-            # Lof the result with gradient
-            log("ScInverseModelingSolver", None, "evaluate_cost_function", "f:{}, g:{}".format(repr(error), repr(gradient)), level=1)
-            return (error, gradient)
+        """
+        Evaluate the cost function
+        Updates the parameters in the graph and executes it
+        Potentially slow
+        """
+        # Update parameters in the tree
+        float_properties = self.flat_vector_to_properties(self.property_map, x)
+        self.curr_tree.set_float_properties(float_properties)
+        self.curr_tree.execute_node()
+        # Update the view
+        self.context.view_layer.update()
+        # Collect the name of bounding boxes
+        bounding_boxes = self.curr_tree.get_object_boxes()
+        # Compute the error
+        error = self.compute_error(bounding_boxes)
+        # Lof the result without gradient
+        log("ScInverseModelingSolver", None, "evaluate_cost_function", "f:{}".format(repr(error)), level=1)
+        return error
+
+
+    def solve_with_autodiff(self):
+        """
+        Solve the problem using autodiff to compute the gradient
+        """
+        # Just a reference for more concise code
+        autodiff_variables = self.curr_tree.autodiff_variables
+        # Execute the graph with the initial parameters
+        self.curr_tree.set_float_properties(self.initial_float_properties)
+        # Start measuring optimization time
+        time_start = perf_counter()
+        # Collect the name of autodiff bounding boxes
+        bounding_boxes = self.curr_tree.get_object_autodiff_boxes_names()
+        # Build the initial parameter vector x0
+        x0 = self.properties_to_flat_vector(self.property_map, self.initial_float_properties)
+        # Build the cost function and save it for later
+        autodiff_cost_function = autodiff_variables.build_cost_function(self.target_bounding_boxes, bounding_boxes, self.curr_tree.objects)
+        # Build functions with concatenated vectors to optimize with 1D vectors of parameters
+        func = autodiff_variables.build_function(autodiff_cost_function, vertcat_symbols=True)
+        grad_func = autodiff_variables.build_gradient(autodiff_cost_function, vertcat_symbols=True)
+        # Wrap the function and its gradient in a CasadiFunction object
+        cost_function = CasadiFunction()
+        cost_function.set_functions(func, grad_func)
+        if self.is_problem_unconstrained(self.float_properties_bounds):
+            # Use the "BFGS" solver on unconstrained problem
+            res = minimize(cost_function.evaluate, x0, method='BFGS', jac=cost_function.derivative, options={'gtol': 1e-6, 'disp': True})
         else:
-            # Update parameters in the tree
-            float_properties = self.flat_vector_to_properties(self.property_map, x)
-            self.curr_tree.set_float_properties(float_properties)
-            self.curr_tree.execute_node()
-            # Update the view
-            self.context.view_layer.update()
-            # Collect the name of bounding boxes
-            bounding_boxes = self.curr_tree.get_object_boxes()
-            # Compute the error
-            error = self.compute_error(bounding_boxes)
-            # Lof the result without gradient
-            log("ScInverseModelingSolver", None, "evaluate_cost_function", "f:{}".format(repr(error)), level=1)
-            return error
+            # Use the "L-BFGS-B" solver and define bounds
+            bounds = self.properties_bounds_to_flat_vector(self.property_map, self.float_properties_bounds)
+            res = minimize(cost_function.evaluate, x0, method='L-BFGS-B', jac=cost_function.derivative, bounds=bounds, options={'gtol': 1e-6, 'disp': True})
+        time_end = perf_counter()
+        log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - time_start), level=1)
+        return self.flat_vector_to_properties(self.property_map, res.x)
 
-    # TODO: solve autodiff function
 
-    # TODO: solve traditional function
+    def solve_without_autodiff(self):
+        """
+        Solve the problem without using autodiff
+        Finite differences are used instead to estimate the gradient
+        Works well when the number of parameters is not too high
+        """
+        # Start measuring optimization time
+        time_start = perf_counter()
+        x0 = self.properties_to_flat_vector(self.property_map, self.initial_float_properties)
+        if self.is_problem_unconstrained(self.float_properties_bounds):
+            # Use the "Nelder-Mead" solver on unconstrained problem
+            res = minimize(self.evaluate_cost_function, x0, method='nelder-mead', options={'xatol': 1e-1, 'disp': True})
+        else:
+            # Use the "Powell" solver and define bounds
+            bounds = self.properties_bounds_to_flat_vector(self.property_map, self.float_properties_bounds)
+            res = minimize(self.evaluate_cost_function, x0, method='Powell', bounds=bounds, options={'xtol': 1e-1, 'disp': True})
+        
+        time_end = perf_counter()
+        log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - time_start), level=1)
+        return self.flat_vector_to_properties(self.property_map, res.x)
     
+
     def solve(self):
+        """
+        Solve the optimization problem
+        Select between the autodiff or finite differences optimizer 
+        """
         # Check if the procedural tree is autodifferentiable
         # Only check the target bounding boxes, if some of the boxes are not autodifferentiable
         # but they are not part of the target, we can still benefit from autodiff acceleration
         if self.curr_tree.are_target_boxes_all_autodiff(self.target_bounding_boxes):
-            # Use the autodiff solver
-            # Execute the graph with the initial parameters
-            self.curr_tree.set_float_properties(self.initial_float_properties)
-            # Start measuring optimization time
-            self.time_start = perf_counter()
-            # Collect the name of autodiff bounding boxes
-            bounding_boxes = self.curr_tree.get_object_autodiff_boxes_names()
-            # Build the cost function and save it for later
-            self.autodiff_cost_function = self.curr_tree.autodiff_variables.build_cost_function(self.target_bounding_boxes, bounding_boxes, self.curr_tree.objects)
-            x0 = self.properties_to_flat_vector(self.property_map, self.initial_float_properties)
-            if self.is_problem_unconstrained(self.float_properties_bounds):
-                # Use the "BFGS" solver on unconstrained problem
-                res = minimize(self.evaluate_cost_function, x0, method='BFGS', jac=True, options={'gtol': 1e-6, 'disp': True})
-            else:
-                # Use the "L-BFGS-B" solver and define bounds
-                bounds = self.properties_bounds_to_flat_vector(self.property_map, self.float_properties_bounds)
-                res = minimize(self.evaluate_cost_function, x0, method='L-BFGS-B', jac=True, bounds=bounds, options={'gtol': 1e-6, 'disp': True})
+            return self.solve_with_autodiff()
         else:
-            # Start measuring optimization time
-            self.time_start = perf_counter()
-            # Use the traditional solver
-            # The cost function cannot be built in advance because autodiff cannot be enabled
-            self.autodiff_cost_function = None
-            x0 = self.properties_to_flat_vector(self.property_map, self.initial_float_properties)
-            if self.is_problem_unconstrained(self.float_properties_bounds):
-                # Use the "Nelder-Mead" solver on unconstrained problem
-                res = minimize(self.evaluate_cost_function, x0, method='nelder-mead', options={'xatol': 1e-1, 'disp': True})
-            else:
-                # Use the "Powell" solver and define bounds
-                bounds = self.properties_bounds_to_flat_vector(self.property_map, self.float_properties_bounds)
-                res = minimize(self.evaluate_cost_function, x0, method='Powell', bounds=bounds, options={'xtol': 1e-1, 'disp': True})
+            return self.solve_without_autodiff()
         
-        time_end = perf_counter()
-        log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - self.time_start), level=1)
-        return self.flat_vector_to_properties(self.property_map, res.x)
-
         

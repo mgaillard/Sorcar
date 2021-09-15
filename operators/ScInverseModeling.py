@@ -56,7 +56,11 @@ class ScInverseModeling(Operator):
                     # Optimization
                     initial_float_properties = curr_tree.get_float_properties()
                     float_properties_bounds = curr_tree.get_float_properties_bounds()
-                    solver = ScInverseModelingSolver(curr_tree, target_bounding_boxes, initial_float_properties, float_properties_bounds)
+                    solver = ScInverseModelingSolver(curr_tree,
+                                                     target_bounding_boxes,
+                                                     initial_float_properties,
+                                                     float_properties_bounds,
+                                                     context)
                     best_float_properties = solver.solve()
                     curr_tree.set_float_properties(best_float_properties)
                     

@@ -1,7 +1,6 @@
 from Functions import CasadiFunction, generate_functions
 from Optimizer import Optimizer
 
-# TODO: separate the code in different files, one file per class in one module
 # TODO: try to use the optimizer from the Blender extension
 # TODO: import more Blender functions with two variables (two cube stack)
 # TODO: import the Blender functions for the robotic arm (close edit, very far edit)

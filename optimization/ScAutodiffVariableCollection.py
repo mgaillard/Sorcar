@@ -641,12 +641,38 @@ class ScAutodiffVariableCollection:
                 values.append(self.variables[symbol_name].get_value())
         return values
 
+    def build_function(self, expression, vertcat_symbols=False):
+        """ Build the Casadi function associated to an expression """
+        # List symbols in the expression
+        symbols = casadi.symvar(expression)
+        # If vertcat_symbols is activated, all variables are concatenated in a 1D vector
+        if vertcat_symbols:
+            symbols = [casadi.vertcat(*symbols)]
+        # Build the function
+        f = casadi.Function('f', symbols, [expression])
+        return f
+
+    def build_gradient(self, expression, vertcat_symbols=False):
+        """ Build the Casadi function associated to the gradient of an expression """
+        # List symbols in the expression 
+        symbols = casadi.symvar(expression)
+        # Only keep free variables (not the constants)
+        free_symbols = self.keep_only_free_symbols(symbols)
+        # Build the gradient with free variables
+        grad_expr = casadi.gradient(expression, casadi.vertcat(*free_symbols))
+        # If vertcat_symbols is activated, all variables are concatenated in a 1D vector
+        if vertcat_symbols:
+            symbols = [casadi.vertcat(*symbols)]
+        # Build the gradient function
+        grad_func = casadi.Function('g', symbols, [grad_expr])
+        return grad_func
+
     def evaluate(self, variable):
         # List symbols in variable and assign them a value
         symbols = casadi.symvar(variable)
         values = self.get_symbols_values(symbols)
         # Build the function
-        f = casadi.Function('f', symbols, [variable])
+        f = self.build_function(variable)
         # Evaluate the function with the values
         return f.call(values)
 
@@ -698,14 +724,12 @@ class ScAutodiffVariableCollection:
         symbols = casadi.symvar(variable)
         # Only keep free variables (not the constants)
         free_symbols = self.keep_only_free_symbols(symbols)
-        # Build the gradient with free variables
-        grad = casadi.gradient(variable, casadi.vertcat(*free_symbols))
         # Assign symbols a value
         values = self.get_symbols_values(symbols)
         # Build the gradient function
-        f = casadi.Function('f', symbols, [grad])
+        g = self.build_gradient(variable)
         # Evaluate the gradient with the values
-        results = f.call(values)
+        results = g.call(values)
         # Convert values in the results array to float
         output = {}
         for i in range(len(free_symbols)):
