@@ -641,6 +641,16 @@ class ScAutodiffVariableCollection:
                 values.append(self.variables[symbol_name].get_value())
         return values
 
+    def get_symbols(self, expression):
+        """ Return the list of symbols used in an expression """
+        symbol_names = []
+        # List symbols in the expression
+        symbols = casadi.symvar(expression)
+        # Convert to string
+        for symbol in symbols:
+            symbol_names.append(symbol.name())
+        return symbol_names
+
     def build_function(self, expression, vertcat_symbols=False):
         """ Build the Casadi function associated to an expression """
         # List symbols in the expression

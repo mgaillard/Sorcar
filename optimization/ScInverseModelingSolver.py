@@ -26,6 +26,14 @@ class ScInverseModelingSolver:
 
 
     @staticmethod
+    def create_properties_map_from_symbols(symbols):
+        property_map = []
+        for symbol in symbols:
+            property_map.append(symbol)
+        return property_map
+
+
+    @staticmethod
     def is_problem_unconstrained(float_properties_bounds):
         for property_name in float_properties_bounds:
             if float_properties_bounds[property_name]["bounded"]:
@@ -128,8 +136,6 @@ class ScInverseModelingSolver:
         time_start = perf_counter()
         # Collect the name of autodiff bounding boxes
         bounding_boxes = self.curr_tree.get_object_autodiff_boxes_names()
-        # Build the initial parameter vector x0
-        x0 = self.properties_to_flat_vector(self.property_map, self.initial_float_properties)
         # Build the cost function and save it for later
         autodiff_cost_function = autodiff_variables.build_cost_function(self.target_bounding_boxes, bounding_boxes, self.curr_tree.objects)
         # Build functions with concatenated vectors to optimize with 1D vectors of parameters
@@ -138,16 +144,20 @@ class ScInverseModelingSolver:
         # Wrap the function and its gradient in a CasadiFunction object
         cost_function = CasadiFunction()
         cost_function.set_functions(func, grad_func)
+        # Adapt the property map to have the same order as symbols in the objective function
+        func_property_map = self.create_properties_map_from_symbols(autodiff_variables.get_symbols(autodiff_cost_function))
+        # Build the initial parameter vector x0
+        x0 = self.properties_to_flat_vector(func_property_map, self.initial_float_properties)
         if self.is_problem_unconstrained(self.float_properties_bounds):
             # Use the "BFGS" solver on unconstrained problem
             res = minimize(cost_function.evaluate, x0, method='BFGS', jac=cost_function.derivative, options={'gtol': 1e-6, 'disp': True})
         else:
             # Use the "L-BFGS-B" solver and define bounds
-            bounds = self.properties_bounds_to_flat_vector(self.property_map, self.float_properties_bounds)
+            bounds = self.properties_bounds_to_flat_vector(func_property_map, self.float_properties_bounds)
             res = minimize(cost_function.evaluate, x0, method='L-BFGS-B', jac=cost_function.derivative, bounds=bounds, options={'gtol': 1e-6, 'disp': True})
         time_end = perf_counter()
         log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - time_start), level=1)
-        return self.flat_vector_to_properties(self.property_map, res.x)
+        return self.flat_vector_to_properties(func_property_map, res.x)
 
 
     def solve_without_autodiff(self):
