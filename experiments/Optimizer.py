@@ -20,7 +20,7 @@ class OptimizationHistory:
     def get_history(self):
         return np.array(self.history)
 
-    def add_sample(self, xk):
+    def add_sample(self, xk, state=None):
         """
         Callback for scipy.optimize.minimize()
         Parameter xk is the current parameter vector 
@@ -181,8 +181,12 @@ class Optimizer:
             s = self.stepsize
             # Generate step in [-1.0; 1.0] when s=1.0
             step = self.rng.uniform(-s, s, x.shape)
-            # Remap the value with the range
-            x = x + step * (self.bounds_xmax - self.bounds_xmin)
+            if (self.bounds_xmin is not None) and (self.bounds_xmax is not None):
+                # Remap the value with the range
+                x = x + step * (self.bounds_xmax - self.bounds_xmin)
+            else:
+                # No remapping needed if there are no bounds
+                x = x + step
             return x
 
     def __init__(self, function, bounds, x0):
@@ -193,11 +197,15 @@ class Optimizer:
         self.function = function
         # Bounds of parameters in SciPy format and in Numpy format
         self.bounds = bounds
-        self.bounds_xmin = np.zeros(len(self.bounds))
-        self.bounds_xmax = np.zeros(len(self.bounds))
-        for i in range(len(self.bounds)):
-            self.bounds_xmin[i] = self.bounds[i][0]
-            self.bounds_xmax[i] = self.bounds[i][1]
+        if self.bounds is not None:
+            self.bounds_xmin = np.zeros(len(self.bounds))
+            self.bounds_xmax = np.zeros(len(self.bounds))
+            for i in range(len(self.bounds)):
+                self.bounds_xmin[i] = self.bounds[i][0]
+                self.bounds_xmax[i] = self.bounds[i][1]
+        else:
+            self.bounds_xmin = None
+            self.bounds_xmax = None
         # Function to take normalized steps with the basinhopping method
         self.__basinhopping_take_step_bounds = self._BasinhoppingTakeStepBounds(self.bounds_xmin, self.bounds_xmax)
         # Initial point for optimization
@@ -227,6 +235,28 @@ class Optimizer:
         Increase the budget of function evaluation
         """
         self.budget = self.budget + additional_budget
+
+    def __get_best_minimizer_args(self):
+        """
+        Return a dictionary with the best arguments for local optimization
+        Uses optimizers from SciPy
+        """
+
+        if self.bounds is None:
+            # No bounds => BFGS
+            return {
+                'method':'BFGS',
+                'jac': self.function.derivative,
+                'options': {'gtol': 1e-6, 'disp': False}
+            }
+        elif self.bounds is not None:
+            # Bounds => L-BFGS-B
+            return {
+                'method':'L-BFGS-B',
+                'jac': self.function.derivative,
+                'bounds': self.bounds,
+                'options': {'gtol': 1e-6, 'disp': False}
+            }
 
     def __update_time_and_budget(self, elapsed_time, res):
         """
@@ -292,10 +322,13 @@ class Optimizer:
         Specific function for overriding accept_test in the basinhopping method
         Only accept steps that are in within the bounds
         """
-        x = kwargs["x_new"]
-        tmax = bool(np.all(x <= self.bounds_xmax))
-        tmin = bool(np.all(x >= self.bounds_xmin))
-        return tmax and tmin
+        if self.bounds is not None:
+            x = kwargs["x_new"]
+            tmax = bool(np.all(x <= self.bounds_xmax))
+            tmin = bool(np.all(x >= self.bounds_xmin))
+            return tmax and tmin
+        else:
+            return True
 
     def local_optimization(self):
         """
@@ -306,14 +339,11 @@ class Optimizer:
         optim_history.add_sample(self.x0)
 
         start_time = default_timer()
+        minimizer_kwargs = self.__get_best_minimizer_args()
         res = minimize(self.function.evaluate,
                        self.x0,
-                       method='L-BFGS-B',
-                       jac=self.function.derivative,
-                       # hess=self.function.hessian,
-                       bounds=self.bounds,
                        callback=optim_history.add_sample,
-                       options={'gtol': 1e-6, 'disp': True})
+                       **minimizer_kwargs)
         end_time = default_timer()
         print('Local optimization time: {} s'.format(end_time - start_time))
         # Updates after optimization
@@ -329,11 +359,7 @@ class Optimizer:
         optim_points = OptimizationAcceptedPointList()
         
         start_time = default_timer()
-        minimizer_kwargs = {
-            'method':'L-BFGS-B',
-            'jac': self.function.derivative,
-            'bounds': self.bounds
-        }
+        minimizer_kwargs = self.__get_best_minimizer_args()
         res = basinhopping(self.function.evaluate,
                            self.best_optimal,
                            niter=self.budget,
@@ -363,11 +389,7 @@ class Optimizer:
         optim_points = OptimizationAcceptedPointList()
 
         start_time = default_timer()
-        minimizer_kwargs = {
-            'method':'L-BFGS-B',
-            'jac': self.function.derivative,
-            'bounds': self.bounds
-        }
+        minimizer_kwargs = self.__get_best_minimizer_args()
         res = basinhopping(self.function.evaluate,
                            self.best_optimal,
                            niter=self.budget,
@@ -457,8 +479,19 @@ def plot_function_contour_with_samples(func, bounds, path, show_arrows, interest
     resolutionX = 50
     resolutionY = 50
 
-    x = np.linspace(bounds[0][0], bounds[0][1], resolutionX)
-    y = np.linspace(bounds[1][0], bounds[1][1], resolutionY)
+    if bounds is not None:
+        xmin = bounds[0][0]
+        xmax = bounds[0][1]
+        ymin = bounds[1][0]
+        ymax = bounds[1][1]
+    else:
+        xmin = -5.0
+        xmax = 5.0
+        ymin = -5.0
+        ymax = 5.0
+
+    x = np.linspace(xmin, xmax, resolutionX)
+    y = np.linspace(ymin, ymax, resolutionY)
     X, Y = np.meshgrid(x, y)
 
     Z = np.zeros((resolutionX, resolutionY))
