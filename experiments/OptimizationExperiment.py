@@ -1,10 +1,9 @@
 from Functions import CasadiFunction, generate_functions
 from Optimizer import Optimizer
 
-# TODO: make the bounds in the optimizer work with the Bound object instead of just Numpy arrays
-# TODO: import more Blender functions with two variables (two cube stack)
-# TODO: import the Blender functions for the robotic arm (close edit, very far edit)
-# TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
+# TODO: activate the bounds in the optimizer in the Blender add-on
+# TODO: create Blender example with two variables (two cube stack)
+# TODO: benchmark the time needed for computing the gradient µvs the Hessian of a function
 # TODO: run K-Medoid on the set of all optimal points
 # TODO: find an order for the medoids
 # TODO: try nonlinear-PCA on the set of points

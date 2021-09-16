@@ -170,9 +170,8 @@ class Optimizer:
         Specific class for overriding take_step in the basinhopping method
         Normalize the coordinates between the bounds
         """
-        def __init__(self, bounds_xmin, bounds_xmax, stepsize=0.5):
-            self.bounds_xmin = bounds_xmin
-            self.bounds_xmax = bounds_xmax
+        def __init__(self, bounds_range, stepsize=0.5):
+            self.bounds_range = bounds_range
             self.stepsize = stepsize
             self.rng = np.random.default_rng()
 
@@ -181,9 +180,9 @@ class Optimizer:
             s = self.stepsize
             # Generate step in [-1.0; 1.0] when s=1.0
             step = self.rng.uniform(-s, s, x.shape)
-            if (self.bounds_xmin is not None) and (self.bounds_xmax is not None):
+            if self.bounds_range is not None:
                 # Remap the value with the range
-                x = x + step * (self.bounds_xmax - self.bounds_xmin)
+                x = x + step * self.bounds_range
             else:
                 # No remapping needed if there are no bounds
                 x = x + step
@@ -198,16 +197,22 @@ class Optimizer:
         # Bounds of parameters in SciPy format and in Numpy format
         self.bounds = bounds
         if self.bounds is not None:
-            self.bounds_xmin = np.zeros(len(self.bounds))
-            self.bounds_xmax = np.zeros(len(self.bounds))
-            for i in range(len(self.bounds)):
-                self.bounds_xmin[i] = self.bounds[i][0]
-                self.bounds_xmax[i] = self.bounds[i][1]
+            self.bounds_xmin = np.zeros_like(self.bounds.lb)
+            self.bounds_xmax = np.zeros_like(self.bounds.ub)
+            self.bounds_range = np.zeros_like(self.bounds.ub)
+            for i in range(len(self.bounds.lb)):
+                self.bounds_xmin[i] = self.bounds.lb[i]
+                self.bounds_xmax[i] = self.bounds.ub[i]
+                if (self.bounds.ub[i] < np.inf) and (self.bounds.lb[i] > -np.inf):
+                    self.bounds_range[i] = self.bounds.ub[i] - self.bounds.lb[i]
+                else:
+                    self.bounds_range[i] = 1.0
         else:
             self.bounds_xmin = None
             self.bounds_xmax = None
+            self.bounds_range = None
         # Function to take normalized steps with the basinhopping method
-        self.__basinhopping_take_step_bounds = self._BasinhoppingTakeStepBounds(self.bounds_xmin, self.bounds_xmax)
+        self.__basinhopping_take_step_bounds = self._BasinhoppingTakeStepBounds(self.bounds_range)
         # Initial point for optimization
         self.x0 = x0
         # Budget of function evaluation left
@@ -483,10 +488,10 @@ def plot_function_contour_with_samples(func, bounds, path, show_arrows, interest
     resolutionY = 50
 
     if bounds is not None:
-        xmin = bounds[0][0]
-        xmax = bounds[0][1]
-        ymin = bounds[1][0]
-        ymax = bounds[1][1]
+        xmin = bounds.lb[0]
+        xmax = bounds.ub[0]
+        ymin = bounds.lb[1]
+        ymax = bounds.ub[1]
     else:
         xmin = -5.0
         xmax = 5.0

@@ -1,5 +1,6 @@
 import math
 from casadi import *
+from scipy.optimize import Bounds
 
 class CasadiFunction:
     """
@@ -185,7 +186,7 @@ def generate_rosen():
     function.set_expression(expr, x)
     return {
         'function': function,
-        'bounds': [(-2.0, 2.0), (-1.0, 3.0)],
+        'bounds': Bounds(np.array([-2.0, -1.0]), np.array([2.0, 3.0])),
         'starting_point': [1.3, 0.7]
     }
 
@@ -205,7 +206,7 @@ def generate_underdetermined_linear():
     function.set_expression(expr, x)
     return {
         'function': function,
-        'bounds': [(-2.0, 2.0), (-2.0, 2.0)],
+        'bounds': Bounds(np.array([-2.0, -2.0]), np.array([2.0, 2.0])),
         'starting_point': [1.3, 0.7]
     }
 
@@ -224,7 +225,7 @@ def generate_underdetermined_circle():
     function.set_expression(expr, x)
     return {
         'function': function,
-        'bounds': [(-2.0, 2.0), (-2.0, 2.0)],
+        'bounds': Bounds(np.array([-2.0, -2.0]), np.array([2.0, 2.0])),
         'starting_point': [1.3, 0.7]
     }
 
@@ -245,7 +246,7 @@ def generate_underdetermined_disk():
     function.set_expression(expr, x)
     return {
         'function': function,
-        'bounds': [(-3.0, 3.0), (-3.0, 3.0)],
+        'bounds': Bounds(np.array([-3.0, -3.0]), np.array([3.0, 3.0])),
         'starting_point': [1.5, -1.8]
     }
 
@@ -264,7 +265,7 @@ def generate_underdetermined_arm():
     function.set_expression(expr, x)
     return {
         'function': function,
-        'bounds': [(-3.14, 3.14), (-3.14, 3.14)],
+        'bounds': Bounds(np.array([-3.14, -3.14]), np.array([3.14, 3.14])),
         'starting_point': [0.785, 0.0]
     }
 
@@ -280,7 +281,7 @@ def generate_underdetermined_non_optimal():
     function.set_expression(expr, x)
     return {
         'function': function,
-        'bounds': [(-2.0, 2.0), (-10.0, 10.0)],
+        'bounds': Bounds(np.array([-2.0, -10.0]), np.array([2.0, 10.0])),
         'starting_point': [1.3, 0.7]
     }
 
@@ -295,7 +296,7 @@ def generate_sorcar_cube_size_underdetermined():
     function.load_and_jit_compile_code('functions/sorcar_cube_size.c')
     return {
         'function': function,
-        'bounds': [(0.0, 5.0), (0.0, 5.0)],
+        'bounds': Bounds(np.array([0.0, 0.0]), np.array([5.0, 5.0])),
         'starting_point': [1.5, 0.5]
     }
 
@@ -317,7 +318,7 @@ def generate_himmelblau():
     function.set_expression(expr, x)
     return {
         'function': function,
-        'bounds': [(-5.0, 5.0), (-5.0, 5.0)],
+        'bounds': Bounds(np.array([-5.0, -5.0]), np.array([5.0, 5.0])),
         'starting_point': [1.3, 0.7]
     }
 
@@ -334,7 +335,7 @@ def generate_rastrigin():
     function.set_expression(expr, x)
     return {
         'function': function,
-        'bounds': [(-5.0, 5.0), (-5.0, 5.0)],
+        'bounds': Bounds(np.array([-5.0, -5.0]), np.array([5.0, 5.0])),
         'starting_point': [1.3, 0.7]
     }
 
