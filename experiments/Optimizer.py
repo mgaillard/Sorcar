@@ -286,8 +286,11 @@ class Optimizer:
                 elif hasattr(res, 'hess_inv') and res.hess_inv is not None:
                     # Use the pseudo inverse of the inverse of the Hessian (when using BFGS)
                     # For L-BFGS-B, which estimates the Hessian inverse implicitly
+                    if hasattr(res.hess_inv, 'todense') and callable(res.hess_inv.todense):
+                        hess_inv = res.hess_inv.todense()
                     # For BFGS, which estimates the Hessian inverse explicitly
-                    hess_inv = res.hess_inv.todense()
+                    else:
+                        hess_inv = res.hess_inv
                     self.best_hessian = linalg.pinvh(hess_inv)
                 else:
                     self.best_hessian = None

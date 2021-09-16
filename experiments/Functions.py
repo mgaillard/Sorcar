@@ -54,7 +54,7 @@ class CasadiFunction:
         # Directly set the Hessian function
         self.hess_func = hess_func
         # If the Hessian function was not given, deactivate it
-        if self.hess_func:
+        if self.hess_func is None:
             self.activate_hessian = False
 
     def evaluate(self, x):
