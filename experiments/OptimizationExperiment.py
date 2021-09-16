@@ -1,7 +1,7 @@
 from Functions import CasadiFunction, generate_functions
 from Optimizer import Optimizer
 
-# TODO: try to use the optimizer from the Blender extension
+# TODO: make the bounds in the optimizer work with the Bound object instead of just Numpy arrays
 # TODO: import more Blender functions with two variables (two cube stack)
 # TODO: import the Blender functions for the robotic arm (close edit, very far edit)
 # TODO: benchmark the time needed for computing the gradient vs the Hessian of a function

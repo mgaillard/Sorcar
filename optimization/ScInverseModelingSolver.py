@@ -5,6 +5,7 @@ import numpy as np
 from scipy.optimize import minimize, Bounds
 from ..debug import log
 from ..experiments.Functions import CasadiFunction
+from ..experiments.Optimizer import Optimizer
 
 class ScInverseModelingSolver:
 
@@ -141,23 +142,30 @@ class ScInverseModelingSolver:
         # Build functions with concatenated vectors to optimize with 1D vectors of parameters
         func = autodiff_variables.build_function(autodiff_cost_function, vertcat_symbols=True)
         grad_func = autodiff_variables.build_gradient(autodiff_cost_function, vertcat_symbols=True)
+        hess_func = autodiff_variables.build_hessian(autodiff_cost_function, vertcat_symbols=True)
         # Wrap the function and its gradient in a CasadiFunction object
         cost_function = CasadiFunction()
-        cost_function.set_functions(func, grad_func)
+        cost_function.set_functions(func, grad_func, hess_func)
         # Adapt the property map to have the same order as symbols in the objective function
         func_property_map = self.create_properties_map_from_symbols(autodiff_variables.get_symbols(autodiff_cost_function))
         # Build the initial parameter vector x0
         x0 = self.properties_to_flat_vector(func_property_map, self.initial_float_properties)
+
         if self.is_problem_unconstrained(self.float_properties_bounds):
             # Use the "BFGS" solver on unconstrained problem
-            res = minimize(cost_function.evaluate, x0, method='BFGS', jac=cost_function.derivative, options={'gtol': 1e-6, 'disp': True})
+            bounds = None
         else:
             # Use the "L-BFGS-B" solver and define bounds
             bounds = self.properties_bounds_to_flat_vector(func_property_map, self.float_properties_bounds)
-            res = minimize(cost_function.evaluate, x0, method='L-BFGS-B', jac=cost_function.derivative, bounds=bounds, options={'gtol': 1e-6, 'disp': True})
+
+        optimizer = Optimizer(cost_function,
+                              bounds,
+                              x0)
+        optimizer.optimize(200)
+
         time_end = perf_counter()
         log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - time_start), level=1)
-        return self.flat_vector_to_properties(func_property_map, res.x)
+        return self.flat_vector_to_properties(func_property_map, optimizer.best_optimal)
 
 
     def solve_without_autodiff(self):

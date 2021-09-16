@@ -677,6 +677,21 @@ class ScAutodiffVariableCollection:
         grad_func = casadi.Function('g', symbols, [grad_expr])
         return grad_func
 
+    def build_hessian(self, expression, vertcat_symbols=False):
+        """ Build the Casadi function associated to the Hessian of an expression """
+        # List symbols in the expression 
+        symbols = casadi.symvar(expression)
+        # Only keep free variables (not the constants)
+        free_symbols = self.keep_only_free_symbols(symbols)
+        # Build the hessian with free variables
+        hess_expr, grad_expr = casadi.hessian(expression, casadi.vertcat(*free_symbols))
+        # If vertcat_symbols is activated, all variables are concatenated in a 1D vector
+        if vertcat_symbols:
+            symbols = [casadi.vertcat(*symbols)]
+        # Build the gradient function
+        hess_func = casadi.Function('h', symbols, [hess_expr])
+        return hess_func
+
     def evaluate(self, variable):
         # List symbols in variable and assign them a value
         symbols = casadi.symvar(variable)
