@@ -19,6 +19,8 @@ class ScNodeTree(NodeTree):
     objects = []
     variables = {}
     autodiff_variables = ScAutodiffVariableCollection()
+    # A list of preset properties to quickly switch the values of parameters
+    preset_properties = []
 
     def update_realtime(self, context):
         if not (update_each_frame in bpy.app.handlers.frame_change_post):

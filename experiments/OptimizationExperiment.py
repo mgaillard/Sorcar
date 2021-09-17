@@ -1,9 +1,9 @@
 from Functions import CasadiFunction, generate_functions
 from Optimizer import Optimizer
 
-# TODO: create Blender example with two variables (two cube stack)
-# TODO: display all solutions in the console (method in the OptimizationAcceptedPointList)
 # TODO: change the UI to allow the user to choose among a list of configurations each with a label
+# TODO: create a UI panel to list preset configuration (initial configuration, best, nearest...)
+# TODO: create Blender example with two variables (two cube stack)
 # TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
 # TODO: run K-Medoid on the set of all optimal points
 # TODO: find an order for the medoids

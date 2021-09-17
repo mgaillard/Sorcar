@@ -61,8 +61,17 @@ class ScInverseModeling(Operator):
                                                      initial_float_properties,
                                                      float_properties_bounds,
                                                      context)
-                    best_float_properties = solver.solve()
-                    curr_tree.set_float_properties(best_float_properties)
+                    list_best_parameters = solver.solve()
+                    # list_best_parameters is a list of tuples (parameters, label)
+                    # By default we choose the first configuration, which is the most optimal one
+                    curr_tree.set_float_properties(list_best_parameters[0]['params'])
+
+                    # Reset the list of preset configurations
+                    curr_tree.preset_properties = []
+                    # Add the initial configuration
+                    curr_tree.preset_properties.append({'params': initial_float_properties, 'label': 'Initial'})
+                    # Add the all optimal configurations
+                    curr_tree.preset_properties = curr_tree.preset_properties + list_best_parameters
                     
                     # Reset state
                     context.view_layer.update()

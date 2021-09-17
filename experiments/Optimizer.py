@@ -387,6 +387,8 @@ class Optimizer:
         # Check that the optimal point is unique
         if not optim_points.is_unique_point():
             print('Warning: Global optimization yielded multiple optima! The solution may be undetermined.')
+            # Retain the optimal points
+            self.optimal_points = optim_points
 
     def explore_optimality_region(self):
         """
@@ -440,6 +442,7 @@ class Optimizer:
             # Explore the region of optimality
             print('Exploring the local region...')
             self.explore_optimality_region()
+        return self.best_optimal
 
     def plot_2D(self):
         """

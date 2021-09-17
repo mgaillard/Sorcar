@@ -161,11 +161,27 @@ class ScInverseModelingSolver:
         optimizer = Optimizer(cost_function,
                               bounds,
                               x0)
-        optimizer.optimize(200)
-
+        best_optimal = optimizer.optimize(200)
         time_end = perf_counter()
         log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - time_start), level=1)
-        return self.flat_vector_to_properties(func_property_map, optimizer.best_optimal)
+
+        # List of optimal points found by the solver
+        optimal_points = []
+        # Best optimal point
+        optimal_points.append({
+            'params': self.flat_vector_to_properties(func_property_map, best_optimal),
+            'label': 'Best optimal point'
+        })
+        # If other optimal points were found, add them to the list
+        if optimizer.optimal_points is not None:
+            points = optimizer.optimal_points.get_points()
+            for i in range(len(points)):
+                optimal_points.append({
+                    'params': self.flat_vector_to_properties(func_property_map, points[i]),
+                    'label': "Sample " + str(i)
+                })
+
+        return optimal_points
 
 
     def solve_without_autodiff(self):
@@ -187,7 +203,15 @@ class ScInverseModelingSolver:
         
         time_end = perf_counter()
         log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - time_start), level=1)
-        return self.flat_vector_to_properties(self.property_map, res.x)
+
+        # List of optimal points found by the solver
+        optimal_points = []
+        # Best optimal point
+        optimal_points.append({
+            'params': self.flat_vector_to_properties(self.property_map, res.x),
+            'label': 'Best optimal point'
+        })
+        return optimal_points
     
 
     def solve(self):
