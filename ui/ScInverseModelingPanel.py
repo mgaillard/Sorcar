@@ -13,3 +13,9 @@ class ScInverseModelingPanel(Panel, ScPanel):
         layout.operator("sorcar.clear_objects")
         layout.operator("sorcar.print_statistics")
         layout.operator("sorcar.inverse_modeling")
+
+        curr_tree = context.space_data.edit_tree
+        if curr_tree:
+            # Display the number of presets available
+            nb_presets = len(curr_tree.preset_properties)
+            layout.label(text="Preset configurations (" + str(nb_presets) + ")")
