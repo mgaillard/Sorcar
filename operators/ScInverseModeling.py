@@ -62,9 +62,6 @@ class ScInverseModeling(Operator):
                                                      float_properties_bounds,
                                                      context)
                     list_best_parameters = solver.solve()
-                    # list_best_parameters is a list of tuples (parameters, label)
-                    # By default we choose the first configuration, which is the most optimal one
-                    curr_tree.set_float_properties(list_best_parameters[0]['params'])
 
                     # Reset the list of preset configurations
                     curr_tree.preset_properties = []
@@ -72,6 +69,10 @@ class ScInverseModeling(Operator):
                     curr_tree.preset_properties.append({'params': initial_float_properties, 'label': 'Initial'})
                     # Add the all optimal configurations
                     curr_tree.preset_properties = curr_tree.preset_properties + list_best_parameters
+                    
+                    # list_best_parameters is a list of tuples (parameters, label)
+                    # By default we choose the first configuration, which is the most optimal one
+                    curr_tree.set_float_properties(list_best_parameters[0]['params'])
                     
                     # Reset state
                     context.view_layer.update()
