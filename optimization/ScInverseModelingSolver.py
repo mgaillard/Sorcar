@@ -5,7 +5,7 @@ import numpy as np
 from scipy.optimize import minimize, Bounds
 from ..debug import log
 from ..experiments.Functions import CasadiFunction
-from ..experiments.Optimizer import Optimizer
+from ..experiments.Optimizer import OptimizationAcceptedPointList, Optimizer
 
 class ScInverseModelingSolver:
 
@@ -82,6 +82,53 @@ class ScInverseModelingSolver:
             else:
                 float_properties[property_name] = 0.0
         return float_properties
+
+
+    @staticmethod
+    def list_points_and_labels(property_map, x0, optimal_points : OptimizationAcceptedPointList):
+        """
+        List interesting points with their label
+        """
+        list_optimal_points = []
+
+        if optimal_points is not None:
+            # Add interesting points
+            nearest_point = optimal_points.nearest_point(x0)
+            list_optimal_points.append({
+                'params': ScInverseModelingSolver.flat_vector_to_properties(property_map, nearest_point),
+                'label': 'Nearest optimal'
+            })
+            farthest_point = optimal_points.farthest_point(x0)
+            list_optimal_points.append({
+                'params': ScInverseModelingSolver.flat_vector_to_properties(property_map, farthest_point),
+                'label': 'Farthest optimal'
+            })
+            most_delta_point = optimal_points.most_delta_change_point(x0)
+            list_optimal_points.append({
+                'params': ScInverseModelingSolver.flat_vector_to_properties(property_map, most_delta_point),
+                'label': 'Most delta change optimal'
+            })
+            most_proportional_point = optimal_points.most_proportional_change_point(x0)
+            list_optimal_points.append({
+                'params': ScInverseModelingSolver.flat_vector_to_properties(property_map, most_proportional_point),
+                'label': 'Most proportional change optimal'
+            })
+            # For each dimension
+            for i in range(len(property_map)):
+                least_change_dim = optimal_points.least_change_on_axis_point(x0, i)
+                list_optimal_points.append({
+                    'params': ScInverseModelingSolver.flat_vector_to_properties(property_map, least_change_dim),
+                    'label': 'Least change on {}'.format(property_map[i])
+                })
+            # If other optimal points were found, add them to the list
+            points = optimal_points.get_points()
+            for i in range(len(points)):
+                list_optimal_points.append({
+                    'params': ScInverseModelingSolver.flat_vector_to_properties(property_map, points[i]),
+                    'label': 'Sample ' + str(i)
+                })
+        
+        return list_optimal_points
 
 
     def compute_error(self, bounding_boxes):
@@ -172,15 +219,7 @@ class ScInverseModelingSolver:
             'params': self.flat_vector_to_properties(func_property_map, best_optimal),
             'label': 'Best optimal point'
         })
-        # If other optimal points were found, add them to the list
-        if optimizer.optimal_points is not None:
-            points = optimizer.optimal_points.get_points()
-            for i in range(len(points)):
-                optimal_points.append({
-                    'params': self.flat_vector_to_properties(func_property_map, points[i]),
-                    'label': "Sample " + str(i)
-                })
-
+        optimal_points = optimal_points + self.list_points_and_labels(func_property_map, x0, optimizer.optimal_points)
         return optimal_points
 
 

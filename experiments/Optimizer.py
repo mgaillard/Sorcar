@@ -412,6 +412,7 @@ class Optimizer:
         if not optim_points.is_unique_point():
             print('Warning: Global optimization yielded multiple optima! The solution may be undetermined.')
             # Retain the optimal points
+            optim_points.sort_points()
             optim_points.remove_duplicate_samples()
             self.optimal_points = optim_points
 
@@ -442,9 +443,9 @@ class Optimizer:
         # Update the budget
         self.__update_time_and_budget(end_time - start_time, res)
 
-        # Sort points per increasing f value
-        optim_points.sort_points()
         # Retain the optimal points
+        optim_points.sort_points()
+        optim_points.remove_duplicate_samples()
         self.optimal_points = optim_points
 
     def optimize(self, budget):
