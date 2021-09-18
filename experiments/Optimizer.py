@@ -60,6 +60,30 @@ class OptimizationAcceptedPointList:
         
         return (max_dist <= threshold)
 
+    def remove_duplicate_samples(self, threshold=1e-2):
+        """
+        Remove sample points that are duplicates of each others
+        Two points are considered duplicates if they are within a certain distance 
+        Warning: use a inefficient n^2 algorithm
+        TODO: Use a KD tree to make this function faster
+        """
+        # Create a new array containing only the new points
+        new_points = []
+
+        for i in range(len(self.points)):
+            # Whether point i is unique
+            is_point_i_unique = True
+            for j in range(i + 1, len(self.points)):
+                # Compute the distance between the two points
+                d = np.linalg.norm(self.points[i][0] - self.points[j][0])
+                if d < threshold:
+                    is_point_i_unique = False
+            if is_point_i_unique:
+                new_points.append(self.points[i])
+
+        # Replace points with the new list within duplicates
+        self.points = new_points
+
     def nearest_point(self, x):
         """ Return the nearest point to a query point """
         nearest = self.points[0][0]
@@ -388,6 +412,7 @@ class Optimizer:
         if not optim_points.is_unique_point():
             print('Warning: Global optimization yielded multiple optima! The solution may be undetermined.')
             # Retain the optimal points
+            optim_points.remove_duplicate_samples()
             self.optimal_points = optim_points
 
     def explore_optimality_region(self):

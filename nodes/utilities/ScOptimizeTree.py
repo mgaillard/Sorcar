@@ -99,8 +99,8 @@ class ScOptimizeTree(Node, ScNode):
         initial_float_properties = curr_tree.get_float_properties()
         float_properties_bounds = curr_tree.get_float_properties_bounds()
         solver = ScInverseModelingSolver(curr_tree, target_bounding_boxes, initial_float_properties, float_properties_bounds)
-        best_float_properties = solver.solve()
-        curr_tree.set_float_properties(best_float_properties)
+        list_best_parameters = solver.solve()
+        curr_tree.set_float_properties(list_best_parameters[0]['params'])
     
     def post_execute(self):
         out = super().post_execute()

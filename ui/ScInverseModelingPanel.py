@@ -20,13 +20,8 @@ class ScInverseModelingPanel(Panel, ScPanel):
             nb_presets = len(curr_tree.preset_properties)
             layout.label(text="Preset configurations (" + str(nb_presets) + ")")
             # Display buttons to select one of the configurations
-            if nb_presets > 0:
+            for i in range(len(curr_tree.preset_properties)):
+                preset_label = curr_tree.preset_properties[i]['label']
                 # Call the preset operator with the index of the configuration to show
-                button0 = self.layout.operator('sorcar.select_preset_configuration', text='Preset: Initial')
-                button0.preset_index = 0
-                # Call the preset operator with the index of the configuration to show
-                button1 = self.layout.operator('sorcar.select_preset_configuration', text='Preset 1')
-                button1.preset_index = 1
-                # Call the preset operator with the index of the configuration to show
-                button2 = self.layout.operator('sorcar.select_preset_configuration', text='Preset 2')
-                button2.preset_index = 2
+                button0 = self.layout.operator('sorcar.select_preset_configuration', text=preset_label)
+                button0.preset_index = i
