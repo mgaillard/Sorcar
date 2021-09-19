@@ -1,11 +1,12 @@
 from Functions import CasadiFunction, generate_functions
 from Optimizer import Optimizer
 
-# TODO: show the list of preset configurations (initial configuration, best, nearest...)
+# TODO: run DBScan to find clusters of similar points
 # TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
 # TODO: run K-Medoid on the set of all optimal points
-# TODO: find an order for the medoids
+# TODO: find an order for the medoids (with approximate TSP)
 # TODO: try nonlinear-PCA on the set of points
+# TODO: add intermediary positions instead of a slider (sample 1, sample 2, etc...)
 # TODO: show a slider (1D or 2D) for exploring the solution set, and by changing it, show the position on the 2D plot
 # TODO: try trust region methods for local optimization
 # TODO: parallelize to speed up optimization, run the algorithm many time in parallel and aggregate results

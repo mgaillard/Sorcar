@@ -4,9 +4,11 @@ from timeit import default_timer
 import numpy as np
 from scipy.optimize import minimize, basinhopping
 from scipy import linalg
+from sklearn.cluster import DBSCAN
+from sklearn import metrics
+from sklearn_extra.cluster import KMedoids
 import matplotlib.pyplot as plt
 from matplotlib import ticker
-
 
 class OptimizationHistory:
     """ Register evaluations of the cost function as optimization is happening """
@@ -171,6 +173,61 @@ class OptimizationAcceptedPointList:
         for p in self.points:
             points.append(p[0])
         return np.array(points)
+
+    def cluster_and_order_points(self):
+        """
+        Cluster points with DBSCAN and order them
+        Source: https://scikit-learn.org/stable/auto_examples/cluster/plot_dbscan.html#sphx-glr-auto-examples-cluster-plot-dbscan-py
+        """
+        points = self.get_points()
+        db = DBSCAN(eps=0.5, min_samples=1).fit(points)
+        core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+        core_samples_mask[db.core_sample_indices_] = True
+        labels = db.labels_
+        unique_labels = set(labels)
+
+        # Number of clusters in labels, ignoring noise if present.
+        n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+        n_noise_ = list(labels).count(-1)
+        print('Estimated number of clusters: %d' % n_clusters_)
+        print('Estimated number of noise points: %d' % n_noise_)
+
+        cluster_points = []
+        noise_points = []
+
+        # Get points per cluster
+        for k in unique_labels:
+            class_member_mask = (labels == k)
+            if k == -1:
+                # Noise points
+                noise_points = points[class_member_mask]
+            elif k >= 0:
+                # Actual cluster point
+                points_in_cluster = points[class_member_mask]
+                # For all clusters, run KMedoid and replace the points by the medoids
+                kmedoids = KMedoids(n_clusters=8,
+                                    metric='euclidean',
+                                    method='alternate',
+                                    init='k-medoids++',
+                                    max_iter=300,
+                                    random_state=None).fit(points_in_cluster)
+                points_in_cluster = kmedoids.cluster_centers_
+                cluster_points.append(points_in_cluster)
+                print('Cluster {} # of points: {}'.format(k, len(points_in_cluster)))        
+
+        # Noise is the last cluster
+        if len(noise_points) > 0:
+            cluster_points.append(noise_points)
+
+        # Black removed and is used for noise instead.
+        colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(cluster_points))]
+        for i in range(len(cluster_points)):
+            plt.plot(cluster_points[i][:, 0], cluster_points[i][:, 1], 'o', markerfacecolor=tuple(colors[i]))
+        
+        plt.title('Estimated number of clusters: %d' % n_clusters_)
+        plt.show()
+
+        return cluster_points
 
     def basinhopping_callback(self, x, f, accept):
         """
