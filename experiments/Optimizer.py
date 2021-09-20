@@ -7,22 +7,10 @@ from scipy import linalg, spatial
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
 from sklearn_extra.cluster import KMedoids
-from sko.ACA import ACA_TSP
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
-def hamiltonian_path_objective_function(distance_matrix, routine):
-    """
-    The objective function for shortest Hamiltonian path.
-    Starts from the first point and goes to the last point, but does not cycle.
-    Input: routine
-    Return: total distance
-    hamiltonian_path_objective_function(distance_matrix, np.arange(num_points))
-    """
-    num_points, = routine.shape
-    cost = sum([distance_matrix[routine[i % num_points], routine[(i + 1) % num_points]] for i in range(num_points - 1)])
-    print(cost)
-    return cost
+from ShortestHamiltonianPath import shortest_hamiltonian_path, shortest_hamiltonian_path_bruteforce
 
 class OptimizationHistory:
     """ Register evaluations of the cost function as optimization is happening """
@@ -229,13 +217,9 @@ class OptimizationAcceptedPointList:
                                         max_iter=300,
                                         random_state=None).fit(points_in_cluster)
                     points_in_cluster = kmedoids.cluster_centers_
-                    # Order the points with TSP
-                    num_points = len(points_in_cluster)
-                    distance_matrix = spatial.distance.cdist(points_in_cluster, points_in_cluster, metric='euclidean')
-                    objective_func = lambda routine : hamiltonian_path_objective_function(distance_matrix, routine)
-                    tsp = ACA_TSP(func=objective_func, n_dim=num_points, size_pop=50, max_iter=200, distance_matrix=distance_matrix)
-                    best_points, best_distance = tsp.run()
-                    print(best_points, best_distance, objective_func(best_points))
+                    # Order points to minimize distance between them
+                    points_ordering = shortest_hamiltonian_path_bruteforce(points_in_cluster)
+                    points_in_cluster = points_in_cluster[points_ordering]
 
                 cluster_points.append(points_in_cluster)
                 print('Cluster {} # of points: {}'.format(k, len(points_in_cluster)))        

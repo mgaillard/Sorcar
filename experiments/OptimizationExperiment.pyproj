@@ -30,6 +30,9 @@
     <Compile Include="Optimizer.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ShortestHamiltonianPath.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env\">
