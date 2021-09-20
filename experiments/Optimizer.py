@@ -3,12 +3,26 @@ import random
 from timeit import default_timer
 import numpy as np
 from scipy.optimize import minimize, basinhopping
-from scipy import linalg
+from scipy import linalg, spatial
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
 from sklearn_extra.cluster import KMedoids
+from sko.ACA import ACA_TSP
 import matplotlib.pyplot as plt
 from matplotlib import ticker
+
+def hamiltonian_path_objective_function(distance_matrix, routine):
+    """
+    The objective function for shortest Hamiltonian path.
+    Starts from the first point and goes to the last point, but does not cycle.
+    Input: routine
+    Return: total distance
+    hamiltonian_path_objective_function(distance_matrix, np.arange(num_points))
+    """
+    num_points, = routine.shape
+    cost = sum([distance_matrix[routine[i % num_points], routine[(i + 1) % num_points]] for i in range(num_points - 1)])
+    print(cost)
+    return cost
 
 class OptimizationHistory:
     """ Register evaluations of the cost function as optimization is happening """
@@ -204,14 +218,25 @@ class OptimizationAcceptedPointList:
             elif k >= 0:
                 # Actual cluster point
                 points_in_cluster = points[class_member_mask]
-                # For all clusters, run KMedoid and replace the points by the medoids
-                kmedoids = KMedoids(n_clusters=8,
-                                    metric='euclidean',
-                                    method='alternate',
-                                    init='k-medoids++',
-                                    max_iter=300,
-                                    random_state=None).fit(points_in_cluster)
-                points_in_cluster = kmedoids.cluster_centers_
+                # If there are more points than the target number of clusters, run KMedoid
+                kmedoid_n_clusters = 8
+                if len(points_in_cluster) > kmedoid_n_clusters:
+                    # For all clusters, run KMedoid and replace the points by the medoids
+                    kmedoids = KMedoids(n_clusters=kmedoid_n_clusters,
+                                        metric='euclidean',
+                                        method='alternate',
+                                        init='k-medoids++',
+                                        max_iter=300,
+                                        random_state=None).fit(points_in_cluster)
+                    points_in_cluster = kmedoids.cluster_centers_
+                    # Order the points with TSP
+                    num_points = len(points_in_cluster)
+                    distance_matrix = spatial.distance.cdist(points_in_cluster, points_in_cluster, metric='euclidean')
+                    objective_func = lambda routine : hamiltonian_path_objective_function(distance_matrix, routine)
+                    tsp = ACA_TSP(func=objective_func, n_dim=num_points, size_pop=50, max_iter=200, distance_matrix=distance_matrix)
+                    best_points, best_distance = tsp.run()
+                    print(best_points, best_distance, objective_func(best_points))
+
                 cluster_points.append(points_in_cluster)
                 print('Cluster {} # of points: {}'.format(k, len(points_in_cluster)))        
 
@@ -222,7 +247,7 @@ class OptimizationAcceptedPointList:
         # Black removed and is used for noise instead.
         colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(cluster_points))]
         for i in range(len(cluster_points)):
-            plt.plot(cluster_points[i][:, 0], cluster_points[i][:, 1], 'o', markerfacecolor=tuple(colors[i]))
+            plt.plot(cluster_points[i][:, 0], cluster_points[i][:, 1], marker='o', color=tuple(colors[i]), linestyle='-')
         
         plt.title('Estimated number of clusters: %d' % n_clusters_)
         plt.show()
