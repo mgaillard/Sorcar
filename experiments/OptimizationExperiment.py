@@ -1,14 +1,10 @@
 from Functions import CasadiFunction, generate_functions
 from Optimizer import Optimizer
 
-# TODO: run DBScan to find clusters of similar points
-# TODO: benchmark the time needed for computing the gradient vs the Hessian of a function
-# TODO: run K-Medoid on the set of all optimal points
-# TODO: find an order for the medoids (with approximate TSP)
-# TODO: try nonlinear-PCA on the set of points
 # TODO: add intermediary positions instead of a slider (sample 1, sample 2, etc...)
+# TODO: order all samples by projecting on the line segment
+# TODO: try nonlinear-PCA on the set of points
 # TODO: show a slider (1D or 2D) for exploring the solution set, and by changing it, show the position on the 2D plot
-# TODO: try trust region methods for local optimization
 # TODO: parallelize to speed up optimization, run the algorithm many time in parallel and aggregate results
 # TODO: when running global optimization, start from random points with basinhopping
 # TODO: try to propose more than one option when giving a delta solution or a proportional solution
@@ -37,6 +33,9 @@ def main():
         optimizer.optimize(400)
         print('Total optimization time: {} s'.format(optimizer.get_total_time()))
         optimizer.plot_2D()
+
+        if optimizer.optimal_points is not None:
+            optimizer.optimal_points.cluster_and_order_points()
 
 
 if __name__ == "__main__":

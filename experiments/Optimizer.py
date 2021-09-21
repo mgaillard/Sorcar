@@ -176,9 +176,35 @@ class OptimizationAcceptedPointList:
             points.append(p[0])
         return np.array(points)
 
+    def __find_medoids_and_order(self, points, kmedoid_n_clusters):
+        """
+        Find medoids of a set of points and
+        order them in such a way that minimizes the length of the path from the first to the last point
+        """
+
+        # If there are more points than the target number of clusters, run KMedoid to reduce the number of points
+        if len(points) > kmedoid_n_clusters:
+            # For all clusters, run KMedoid and replace the points by the medoids
+            kmedoids = KMedoids(n_clusters=kmedoid_n_clusters,
+                                metric='euclidean',
+                                method='alternate',
+                                init='k-medoids++',
+                                max_iter=300,
+                                random_state=None).fit(points)
+            medoids = kmedoids.cluster_centers_
+        else:
+            # No need to reduce the number of points
+            medoids = points
+
+        # Order points to minimize distance between them
+        points_ordering = shortest_hamiltonian_path_bruteforce(medoids)
+        # Return the points with the best ordering
+        return medoids[points_ordering]
+
     def cluster_and_order_points(self):
         """
         Cluster points with DBSCAN and order them
+        Points must not be empty
         Source: https://scikit-learn.org/stable/auto_examples/cluster/plot_dbscan.html#sphx-glr-auto-examples-cluster-plot-dbscan-py
         """
         points = self.get_points()
@@ -206,23 +232,9 @@ class OptimizationAcceptedPointList:
             elif k >= 0:
                 # Actual cluster point
                 points_in_cluster = points[class_member_mask]
-                # If there are more points than the target number of clusters, run KMedoid
-                kmedoid_n_clusters = 8
-                if len(points_in_cluster) > kmedoid_n_clusters:
-                    # For all clusters, run KMedoid and replace the points by the medoids
-                    kmedoids = KMedoids(n_clusters=kmedoid_n_clusters,
-                                        metric='euclidean',
-                                        method='alternate',
-                                        init='k-medoids++',
-                                        max_iter=300,
-                                        random_state=None).fit(points_in_cluster)
-                    points_in_cluster = kmedoids.cluster_centers_
-                    # Order points to minimize distance between them
-                    points_ordering = shortest_hamiltonian_path_bruteforce(points_in_cluster)
-                    points_in_cluster = points_in_cluster[points_ordering]
-
-                cluster_points.append(points_in_cluster)
-                print('Cluster {} # of points: {}'.format(k, len(points_in_cluster)))        
+                points_in_cluster_ordered = self.__find_medoids_and_order(points_in_cluster, 8)
+                cluster_points.append(points_in_cluster_ordered)
+                print('Cluster {} # of points: {}'.format(k, len(points_in_cluster_ordered)))        
 
         # Noise is the last cluster
         if len(noise_points) > 0:
