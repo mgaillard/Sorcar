@@ -200,7 +200,7 @@ class OptimizationAcceptedPointList:
         # Return the points with the best ordering
         return medoids[points_ordering]
 
-    def cluster_and_order_points(self):
+    def cluster_and_order_points(self, visualize=False):
         """
         Cluster points with DBSCAN and order them
         Points must not be empty
@@ -231,7 +231,8 @@ class OptimizationAcceptedPointList:
             elif k >= 0:
                 # Actual cluster point
                 points_in_cluster = points[class_member_mask]
-                points_in_cluster_ordered = self.__find_medoids_and_order(points_in_cluster, 8)
+                cluster_representatives_ordered = self.__find_medoids_and_order(points_in_cluster, 8)
+                points_in_cluster_ordered = order_points_on_line_segment(points_in_cluster, cluster_representatives_ordered)
                 cluster_points.append(points_in_cluster_ordered)
                 print('Cluster {} # of points: {}'.format(k, len(points_in_cluster_ordered)))        
 
@@ -239,13 +240,13 @@ class OptimizationAcceptedPointList:
         if len(noise_points) > 0:
             cluster_points.append(noise_points)
 
-        # Black removed and is used for noise instead.
-        colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(cluster_points))]
-        for i in range(len(cluster_points)):
-            plt.plot(cluster_points[i][:, 0], cluster_points[i][:, 1], marker='o', color=tuple(colors[i]), linestyle='-')
+        if visualize:
+            colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(cluster_points))]
+            for i in range(len(cluster_points)):
+                plt.plot(cluster_points[i][:, 0], cluster_points[i][:, 1], marker='o', color=tuple(colors[i]), linestyle='-')
         
-        plt.title('Estimated number of clusters: %d' % n_clusters_)
-        plt.show()
+            plt.title('Estimated number of clusters: %d' % n_clusters_)
+            plt.show()
 
         return cluster_points
 
@@ -689,3 +690,82 @@ def shortest_hamiltonian_path_bruteforce(points):
             best_points = permutation
          
     return np.asarray(best_points)
+
+
+def point_line_projection(p, a, b):
+    """
+    Projection of point P on the line (AB)
+    Return the parametric coordinate U
+    """
+    vec_ap = p - a
+    vec_ab = b - a
+    norm_sq = np.dot(vec_ab, vec_ab)
+
+    if norm_sq <= 0.0:
+        return 0.0
+
+    return np.dot(vec_ap, vec_ab) / norm_sq
+
+
+def point_multi_line_segment_projection(p, line_segment_points):
+    """
+    Projection of a point P on a multi line segment [Q0, Q1, Q2, ..., Qn-1]
+    Return the parametric coordinate U between 0.0 and N-1
+    """
+
+    # Squared distance to the projection of point P on the line segment
+    minimum_distance_sq = np.inf
+    # Parametric coordinate of point P on the line segment
+    minimum_u = -1.0
+
+    for i in range(len(line_segment_points) - 1):
+        # Start point of the line segment
+        a = line_segment_points[i]
+        # End point of the line segment
+        b = line_segment_points[i + 1]
+        # Projection on the current line segment
+        u = point_line_projection(p, a, b)
+
+        # If the point is before the segment clamp to the segment
+        # unless it's the first segment, in this case, we let it go before on the line
+        if (u < 0.0) and (i > 0):
+            u = 0.0
+        # If the point is after the segment clamp to the segment
+        # unless it's the last segment, in this case, we let it go after on the line
+        elif (u > 1.0) and (i < (len(line_segment_points) - 2)):
+            u = 1.0
+
+        # Compute the distance to the current line segment
+        c = a * (1.0 - u) + b * u
+        d_sq = np.dot(p - c, p - c)
+
+        if d_sq < minimum_distance_sq:
+            minimum_distance_sq = d_sq
+            # The parametric coordinate is the sum of
+            #  - the index of the segment: 0, 1, 2, 3, ...
+            #  - the parametric coordinate on that segment in [0, 1]
+            minimum_u = i + u
+
+    return minimum_u
+
+
+def order_points_on_line_segment(points, line_segment_points):
+    """
+    Sort points to be ordered along a line segment defined by a list of points in an ND space
+    """
+
+    points_u_coord = []
+    # For each point, we find the parametric coordinates of its projection on the line segment
+    for i in range(len(points)):
+        u = point_multi_line_segment_projection(points[i], line_segment_points)
+        points_u_coord.append((u, i))
+
+    # We sort points according to the parametric coordinates
+    points_u_coord.sort(key=lambda x: x[0])
+
+    # Return the points only
+    points_order = []
+    for pu in points_u_coord:
+        points_order.append(pu[1])
+
+    return points[points_order]

@@ -2,7 +2,6 @@ from Functions import CasadiFunction, generate_functions
 from Optimizer import Optimizer
 
 # TODO: add intermediary positions instead of a slider (sample 1, sample 2, etc...)
-# TODO: order all samples by projecting on the line segment
 # TODO: try nonlinear-PCA on the set of points
 # TODO: show a slider (1D or 2D) for exploring the solution set, and by changing it, show the position on the 2D plot
 # TODO: parallelize to speed up optimization, run the algorithm many time in parallel and aggregate results
@@ -35,7 +34,7 @@ def main():
         optimizer.plot_2D()
 
         if optimizer.optimal_points is not None:
-            optimizer.optimal_points.cluster_and_order_points()
+            optimizer.optimal_points.cluster_and_order_points(visualize=True)
 
 
 if __name__ == "__main__":
