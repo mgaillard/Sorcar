@@ -1,6 +1,7 @@
 import math
 import random
 from timeit import default_timer
+from itertools import permutations
 import numpy as np
 from scipy.optimize import minimize, basinhopping
 from scipy import linalg, spatial
@@ -9,8 +10,6 @@ from sklearn import metrics
 from sklearn_extra.cluster import KMedoids
 import matplotlib.pyplot as plt
 from matplotlib import ticker
-
-from ShortestHamiltonianPath import shortest_hamiltonian_path, shortest_hamiltonian_path_bruteforce
 
 class OptimizationHistory:
     """ Register evaluations of the cost function as optimization is happening """
@@ -69,7 +68,7 @@ class OptimizationAcceptedPointList:
         Remove sample points that are duplicates of each others
         Two points are considered duplicates if they are within a certain distance 
         Warning: use a inefficient n^2 algorithm
-        TODO: Use a KD tree to make this function faster
+        TODO: Use a KD tree to make this function faster (c.f. scipy.spatial.KDTree)
         """
         # Create a new array containing only the new points
         new_points = []
@@ -647,3 +646,46 @@ def plot_function_contour_with_samples(func, bounds, path, show_arrows, interest
     ax.set_ylabel('$y$')
 
     plt.show()
+
+
+def hamiltonian_path_objective_function(distance_matrix, routine):
+    """
+    The objective function for shortest Hamiltonian path.
+    Starts from the first point and goes to the last point, but does not cycle.
+    Input: routine
+    Return: total distance
+    hamiltonian_path_objective_function(distance_matrix, np.arange(num_points))
+    """
+    num_points, = routine.shape
+    cost = sum([distance_matrix[routine[i % num_points], routine[(i + 1) % num_points]] for i in range(num_points - 1)])
+    return cost
+
+
+def shortest_hamiltonian_path_bruteforce(points):
+    """
+    Find the order of points that minimizes the total Euclidean distance between them
+    Warning: brute force
+    """
+
+    num_points = len(points)
+    distance_matrix = spatial.distance.cdist(points, points, metric='euclidean')
+
+    # Store all indexes
+    ordered_vertices = []
+    for i in range(num_points):
+        ordered_vertices.append(i)
+ 
+    # Store minimum weight Hamiltonian path
+    min_path = hamiltonian_path_objective_function(distance_matrix, np.array(ordered_vertices))
+    best_points = ordered_vertices
+
+    next_permutation = permutations(ordered_vertices)
+    for permutation in next_permutation:
+        # Measure current permutation
+        current_path_length = hamiltonian_path_objective_function(distance_matrix, np.array(permutation))
+        # Update minimum
+        if current_path_length < min_path:
+            min_path = current_path_length
+            best_points = permutation
+         
+    return np.asarray(best_points)

@@ -120,12 +120,21 @@ class ScInverseModelingSolver:
                     'params': ScInverseModelingSolver.flat_vector_to_properties(property_map, least_change_dim),
                     'label': 'Least change on {}'.format(property_map[i])
                 })
+            # For each cluster of points
+            cluster_points = optimal_points.cluster_and_order_points()
+            for c in range(len(cluster_points)):
+                points = cluster_points[c]
+                for i in range(len(points)):
+                    list_optimal_points.append({
+                        'params': ScInverseModelingSolver.flat_vector_to_properties(property_map, points[i]),
+                        'label': 'Cluster {} Sample {}'.format(c + 1, i + 1)
+                    })
             # If other optimal points were found, add them to the list
             points = optimal_points.get_points()
             for i in range(len(points)):
                 list_optimal_points.append({
                     'params': ScInverseModelingSolver.flat_vector_to_properties(property_map, points[i]),
-                    'label': 'Sample ' + str(i)
+                    'label': 'Sample {}'.format(i)
                 })
         
         return list_optimal_points
@@ -209,8 +218,6 @@ class ScInverseModelingSolver:
                               bounds,
                               x0)
         best_optimal = optimizer.optimize(200)
-        time_end = perf_counter()
-        log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - time_start), level=1)
 
         # List of optimal points found by the solver
         optimal_points = []
@@ -220,6 +227,10 @@ class ScInverseModelingSolver:
             'label': 'Best optimal point'
         })
         optimal_points = optimal_points + self.list_points_and_labels(func_property_map, x0, optimizer.optimal_points)
+        
+        time_end = perf_counter()
+        log("ScInverseModelingSolver", None, "solve", "Execution time: " + str(time_end - time_start), level=1)
+        
         return optimal_points
 
 

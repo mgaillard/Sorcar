@@ -32,32 +32,3 @@ def shortest_hamiltonian_path(points):
     best_points, best_distance = tsp.run()
     
     return best_points
-
-def shortest_hamiltonian_path_bruteforce(points):
-    """
-    Find the order of points that minimizes the total Euclidean distance between them
-    Warning: brute force
-    """
-
-    num_points = len(points)
-    distance_matrix = spatial.distance.cdist(points, points, metric='euclidean')
-
-    # Store all indexes
-    ordered_vertices = []
-    for i in range(num_points):
-        ordered_vertices.append(i)
- 
-    # Store minimum weight Hamiltonian path
-    min_path = hamiltonian_path_objective_function(distance_matrix, np.array(ordered_vertices))
-    best_points = ordered_vertices
-
-    next_permutation = permutations(ordered_vertices)
-    for permutation in next_permutation:
-        # Measure current permutation
-        current_path_length = hamiltonian_path_objective_function(distance_matrix, np.array(permutation))
-        # Update minimum
-        if current_path_length < min_path:
-            min_path = current_path_length
-            best_points = permutation
-         
-    return np.asarray(best_points)
