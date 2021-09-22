@@ -73,6 +73,8 @@ class OptimizationAcceptedPointList:
         # Create a new array containing only the new points
         new_points = []
 
+        start_time = default_timer()
+
         for i in range(len(self.points)):
             # Whether point i is unique
             is_point_i_unique = True
@@ -83,6 +85,19 @@ class OptimizationAcceptedPointList:
                     is_point_i_unique = False
             if is_point_i_unique:
                 new_points.append(self.points[i])
+
+        end_time = default_timer()
+        print('Removing duplicate samples: {} s'.format(end_time - start_time))
+
+        # kd_tree = spatial.KDTree(self.get_points())
+        # pairs = kd_tree.query_pairs(threshold)
+
+        # List points that are duplicates and need to be removed
+        # indices_to_keep = set(range(len(self.points)))
+        # for (i, j) in pairs:
+        #     if (i in indices_to_keep and j in indices_to_keep):
+        #         # Remove j from the set of points to keep
+        #         indices_to_keep.remove(j)
 
         # Replace points with the new list within duplicates
         self.points = new_points
@@ -206,6 +221,8 @@ class OptimizationAcceptedPointList:
         Points must not be empty
         Source: https://scikit-learn.org/stable/auto_examples/cluster/plot_dbscan.html#sphx-glr-auto-examples-cluster-plot-dbscan-py
         """
+        start_time = default_timer()
+
         points = self.get_points()
         db = DBSCAN(eps=0.5, min_samples=1).fit(points)
         core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
@@ -239,6 +256,9 @@ class OptimizationAcceptedPointList:
         # Noise is the last cluster
         if len(noise_points) > 0:
             cluster_points.append(noise_points)
+
+        end_time = default_timer()
+        print('Clustering and ordering of points: {} s'.format(end_time - start_time))
 
         if visualize:
             colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(cluster_points))]
@@ -537,15 +557,17 @@ class Optimizer:
         self.budget = budget
         print('Launching local optimization...')
         self.local_optimization()
-        sol_determined = self.__is_best_optimal_unique()
-        if sol_determined:
-            # Global optimization
-            print('Launching global optimization...')
-            self.global_optimization()
-        else:
-            # Explore the region of optimality
-            print('Exploring the local region...')
-            self.explore_optimality_region()
+        # If there is budget left, we can spend it on global optimization or exploration
+        if self.budget > 0:
+            sol_determined = self.__is_best_optimal_unique()
+            if sol_determined:
+                # Global optimization
+                print('Launching global optimization...')
+                self.global_optimization()
+            else:
+                # Explore the region of optimality
+                print('Exploring the local region...')
+                self.explore_optimality_region()
         return self.best_optimal
 
     def plot_2D(self):

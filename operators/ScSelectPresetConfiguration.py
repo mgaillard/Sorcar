@@ -29,6 +29,7 @@ class ScSelectPresetConfiguration(Operator):
                 # Display the configuration
                 print('Selecting the configuration: {}'.format(preset_label))
                 # Set the configuration
+                curr_tree.current_preset_index = self.preset_index
                 curr_tree.set_float_properties(preset_parameters)
                 # Reset state
                 context.view_layer.update()

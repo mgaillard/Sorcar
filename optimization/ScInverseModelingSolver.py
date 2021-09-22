@@ -9,13 +9,14 @@ from ..experiments.Optimizer import OptimizationAcceptedPointList, Optimizer
 
 class ScInverseModelingSolver:
 
-    def __init__(self, curr_tree, target_bounding_boxes, initial_float_properties, float_properties_bounds, context=None):
+    def __init__(self, curr_tree, target_bounding_boxes, initial_float_properties, float_properties_bounds, context=None, optimizer_budget=0):
         self.curr_tree = curr_tree
         self.target_bounding_boxes = target_bounding_boxes
         self.initial_float_properties = initial_float_properties
         self.float_properties_bounds = float_properties_bounds
         self.property_map = self.create_properties_map(self.initial_float_properties)
         self.context = context
+        self.optimizer_budget = optimizer_budget
 
 
     @staticmethod
@@ -217,7 +218,7 @@ class ScInverseModelingSolver:
         optimizer = Optimizer(cost_function,
                               bounds,
                               x0)
-        best_optimal = optimizer.optimize(200)
+        best_optimal = optimizer.optimize(self.optimizer_budget)
 
         # List of optimal points found by the solver
         optimal_points = []

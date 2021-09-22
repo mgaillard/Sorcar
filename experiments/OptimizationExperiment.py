@@ -2,7 +2,6 @@ from Functions import CasadiFunction, generate_functions
 from Optimizer import Optimizer
 
 # TODO: button to re-run and double the budget
-# TODO: button to just show the next configuration
 # TODO: try nonlinear-PCA on the set of points
 # TODO: show a slider (1D or 2D) for exploring the solution set, and by changing it, show the position on the 2D plot
 # TODO: parallelize to speed up optimization, run the algorithm many time in parallel and aggregate results

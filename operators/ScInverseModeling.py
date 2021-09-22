@@ -1,6 +1,7 @@
 import bpy
 
 from bpy.types import Operator
+from bpy.props import IntProperty
 from ..helper import sc_poll_op
 from ..optimization.ScInverseModelingSolver import ScInverseModelingSolver
 from ..debug import log
@@ -9,6 +10,8 @@ class ScInverseModeling(Operator):
     """Ask the user for a modification and propagate it back"""
     bl_idname = "sorcar.inverse_modeling"
     bl_label = "Inverse Modeling"
+
+    optimizer_budget: IntProperty(default=0, min=0)
 
     @classmethod
     def poll(cls, context):
@@ -60,7 +63,8 @@ class ScInverseModeling(Operator):
                                                      target_bounding_boxes,
                                                      initial_float_properties,
                                                      float_properties_bounds,
-                                                     context)
+                                                     context,
+                                                     self.optimizer_budget)
                     list_best_parameters = solver.solve()
 
                     # Reset the list of preset configurations
