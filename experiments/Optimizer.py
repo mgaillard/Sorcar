@@ -67,37 +67,41 @@ class OptimizationAcceptedPointList:
         """
         Remove sample points that are duplicates of each others
         Two points are considered duplicates if they are within a certain distance 
-        Warning: use a inefficient n^2 algorithm
-        TODO: Use a KD tree to make this function faster (c.f. scipy.spatial.KDTree)
+        Use a KD tree to make this function faster
+        Warning: if the points have more than 20 dimensions it can be slower than brute force
         """
         # Create a new array containing only the new points
         new_points = []
 
         start_time = default_timer()
 
-        for i in range(len(self.points)):
-            # Whether point i is unique
-            is_point_i_unique = True
-            for j in range(i + 1, len(self.points)):
-                # Compute the distance between the two points
-                d = np.linalg.norm(self.points[i][0] - self.points[j][0])
-                if d < threshold:
-                    is_point_i_unique = False
-            if is_point_i_unique:
-                new_points.append(self.points[i])
+        # for i in range(len(self.points)):
+        #     # Whether point i is unique
+        #     is_point_i_unique = True
+        #     for j in range(i + 1, len(self.points)):
+        #         # Compute the distance between the two points
+        #         d = np.linalg.norm(self.points[i][0] - self.points[j][0])
+        #         if d < threshold:
+        #             is_point_i_unique = False
+        #     if is_point_i_unique:
+        #         new_points.append(self.points[i])
+
+        kd_tree = spatial.KDTree(self.get_points())
+        pairs = kd_tree.query_pairs(threshold)
+
+        # List points that are duplicates and need to be removed
+        indices_to_keep = set(range(len(self.points)))
+        for (i, j) in pairs:
+            if (i in indices_to_keep and j in indices_to_keep):
+                # Remove j from the set of points to keep
+                indices_to_keep.remove(j)
+        
+        # Move points that we keep to a new array
+        for i in indices_to_keep:
+            new_points.append(self.points[i])
 
         end_time = default_timer()
         print('Removing duplicate samples: {} s'.format(end_time - start_time))
-
-        # kd_tree = spatial.KDTree(self.get_points())
-        # pairs = kd_tree.query_pairs(threshold)
-
-        # List points that are duplicates and need to be removed
-        # indices_to_keep = set(range(len(self.points)))
-        # for (i, j) in pairs:
-        #     if (i in indices_to_keep and j in indices_to_keep):
-        #         # Remove j from the set of points to keep
-        #         indices_to_keep.remove(j)
 
         # Replace points with the new list within duplicates
         self.points = new_points
