@@ -51,6 +51,18 @@ class ScAutodiffVariable:
     def floor(symbol):
         return casadi.floor(symbol)
 
+    @staticmethod
+    def pow(symbol_x, symbol_y):
+        return casadi.pow(symbol_x, symbol_y)
+
+    @staticmethod
+    def log(symbol):
+        return casadi.log(symbol)
+
+    @staticmethod
+    def sqrt(symbol):
+        return casadi.sqrt(symbol)
+
 
 class ScAutodiffOrientedBoundingBox:
 

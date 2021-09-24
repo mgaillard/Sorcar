@@ -1,8 +1,10 @@
 import bpy
 
+import math
 from bpy.props import StringProperty, PointerProperty, EnumProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
+from ...optimization.ScAutodiffVariableCollection import ScAutodiffVariable
 
 op_items = [
     # (identifier, name, description)
@@ -11,9 +13,12 @@ op_items = [
     ("MULT", "X * Y", "Multiplication"),
     ("DIV", "X / Y", "Division"),
     None,
+    ("POW", "X ^ Y", "Exponent (Power)"),
+    ("LOG", "Log(X)", "Logarithm"),
+    ("SQRT", "√X", "Square Root"),
+    None,
     ("NEGX", "-X", "Negative X"),
     ("NEGY", "-Y", "Negative Y"),
-    None,
     ("DIV2", "X / 2", "Division by 2"),
 ]
 
@@ -85,6 +90,15 @@ class ScAutodiffNumberMathOp(Node, ScNode):
         elif op == 'DIV':
             result_value = x_value / y_value
             result_symbol = x_symbol / y_symbol
+        elif op == 'POW':
+            result_value = x_value
+            result_symbol = ScAutodiffVariable.pow(x_symbol, y_symbol)
+        elif op == 'LOG':
+            result_value = x_value
+            result_symbol = ScAutodiffVariable.log(x_symbol)
+        elif op == 'SQRT':
+            result_value = math.sqrt(x_value)
+            result_symbol = ScAutodiffVariable.sqrt(x_symbol)
         elif op == 'NEGX':
             result_value = -x_value
             result_symbol = -x_symbol
