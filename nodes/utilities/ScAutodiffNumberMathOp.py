@@ -13,6 +13,8 @@ op_items = [
     None,
     ("NEGX", "-X", "Negative X"),
     ("NEGY", "-Y", "Negative Y"),
+    None,
+    ("DIV2", "X / 2", "Division by 2"),
 ]
 
 class ScAutodiffNumberMathOp(Node, ScNode):
@@ -89,6 +91,9 @@ class ScAutodiffNumberMathOp(Node, ScNode):
         elif op == 'NEGY':
             result_value = -y_value
             result_symbol = -y_symbol
+        elif op == 'DIV2':
+            result_value = x_value / 2.0
+            result_symbol = x_symbol / 2.0
 
         # Register the variable in the tree, it cannot be constant because it needs to be a symbol
         autodiff_variables.create_variable(self.name, False, False, 0.0, 0.0, result_value)
