@@ -228,7 +228,7 @@ class OptimizationAcceptedPointList:
         start_time = default_timer()
 
         points = self.get_points()
-        db = DBSCAN(eps=0.5, min_samples=1).fit(points)
+        db = DBSCAN(eps=1.0, min_samples=1).fit(points)
         core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
         core_samples_mask[db.core_sample_indices_] = True
         labels = db.labels_
@@ -268,7 +268,9 @@ class OptimizationAcceptedPointList:
             colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(cluster_points))]
             for i in range(len(cluster_points)):
                 plt.plot(cluster_points[i][:, 0], cluster_points[i][:, 1], marker='o', color=tuple(colors[i]), linestyle='-')
-        
+                
+            # plt.xlim([-3.2, 3.2])
+            # plt.ylim([-3.2, 3.2])
             plt.title('Estimated number of clusters: %d' % n_clusters_)
             plt.show()
 
@@ -296,7 +298,8 @@ class Optimizer:
         Specific class for overriding take_step in the basinhopping method
         Normalize the coordinates between the bounds
         """
-        def __init__(self, bounds_range, stepsize=0.5):
+        def __init__(self, function, bounds_range, stepsize=0.5):
+            self.function = function
             self.bounds_range = bounds_range
             self.stepsize = stepsize
             self.rng = np.random.default_rng()
@@ -306,13 +309,25 @@ class Optimizer:
             s = self.stepsize
             # Generate step in [-1.0; 1.0] when s=1.0
             step = self.rng.uniform(-s, s, x.shape)
+            # Adapt the step size if the function is bounded
             if self.bounds_range is not None:
                 # Remap the value with the range
-                x = x + step * self.bounds_range
+                step = step * self.bounds_range
             else:
                 # No remapping needed if there are no bounds
-                x = x + step
-            return x
+                step = x + step
+            # If the function has Hessian activated, we double the step in the direction of the lowest eigenvalue
+            # if self.function.activate_hessian:
+            #     # Compute Hessian at the optimal point
+            #     H = self.function.hessian(x)
+            #     # Find eigen vectors of the Hessian
+            #     w, v = linalg.eigh(np.array(H))
+            #     # The first eigenvector is the one with the least eigen value
+            #     # Projection of the step on the eigenvector
+            #     proj_step = np.dot(step, v[0]) * v[0]
+            #     step = step + proj_step
+
+            return x + step
 
     def __init__(self, function, bounds, x0):
         """
@@ -338,7 +353,7 @@ class Optimizer:
             self.bounds_xmax = None
             self.bounds_range = None
         # Function to take normalized steps with the basinhopping method
-        self.__basinhopping_take_step_bounds = self._BasinhoppingTakeStepBounds(self.bounds_range)
+        self.__basinhopping_take_step_bounds = self._BasinhoppingTakeStepBounds(self.function, self.bounds_range)
         # Initial point for optimization
         self.x0 = x0
         # Budget of function evaluation left
