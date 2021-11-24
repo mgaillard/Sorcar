@@ -454,7 +454,10 @@ class Optimizer:
         If either eigenvalue is zero, the Hessian needs more investigation
         """
         if self.best_hessian is not None:
+            start_time = default_timer()
             eigenvalues = linalg.eigvalsh(np.array(self.best_hessian))
+            end_time = default_timer()
+            print('Computation of Eigen values: {} s'.format(end_time - start_time))
             for eigenvalue in eigenvalues:
                 if abs(eigenvalue) < threshold:
                     # If at least one eigenvalue is close to zero, the optimal point may not be unique
@@ -495,9 +498,13 @@ class Optimizer:
                        **minimizer_kwargs)
         end_time = default_timer()
         print('Local optimization time: {} s'.format(end_time - start_time))
+        
         # Updates after optimization
+        start_time = default_timer()
         self.__update_best_optimal(res)
         self.__update_time_and_budget(end_time - start_time, res)
+        end_time = default_timer()
+        print('Computation of Hessian: {} s'.format(end_time - start_time))
 
     def global_optimization(self):
         """
