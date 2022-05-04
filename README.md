@@ -1,6 +1,15 @@
-# Sorcar with Autodiff
+# Automatic Differentiable Procedural Modeling
 
-Adding support for auto-differentiation in Sorcar for Inverse Procedural Modeling.
+## Abstract
+
+Procedural modeling allows for an automatic generation of large amounts of similar assets, but there is limited control over the generated output. We address this problem by introducing Automatic Differentiable Procedural Modeling (ADPM). The forward procedural model generates a final editable model. The user modifies the output interactively, and the modifications are transferred back to the procedural model as its parameters by solving an inverse procedural modeling problem. We present an auto-differentiable representation of the procedural model that significantly accelerates optimization. In ADPM the procedural model is always available, all changes are non-destructive, and the user can interactively model the 3D object while keeping the procedural representation. ADPM provides the user with precise control over the resulting model comparable to non-procedural interactive modeling. ADPM is node-based, and it generates hierarchical 3D scene geometry converted to a differentiable computational graph. Our formulation focuses on the differentiability of high-level primitives and bounding volumes of components of the procedural model rather than the detailed mesh geometry. Although this high-level formulation limits the expressiveness of user edits, it allows for efficient derivative computation and enables interactivity. We designed a new optimizer to solve for inverse procedural modeling. It can detect that an edit is under-determined and has degrees of freedom. Leveraging cheap derivative evaluation, it can explore the region of optimality of edits and suggest various configurations, all of which achieve the requested edit differently. We show our system's efficiency on several examples, and we validate it by a user study.
+
+## Teaser
+![Teaser image of our paper](teaser.jpg)
+
+## Please cite our work
+
+> Mathieu Gaillard, Vojtech Krs, Giorgio Gori, Radomir Mech, Bedrich Benes. (2022). Automatic Differentiable Procedural Modeling. Computer Graphics Forum. [https://doi.org/10.1111/cgf.14475](https://doi.org/10.1111/cgf.14475)
 
 ## Install
  - Install Visual Studio Code Extension "Blender Development" by Jacques Lucke
@@ -22,7 +31,18 @@ Adding support for auto-differentiation in Sorcar for Inverse Procedural Modelin
  - Control + Shift + P > Blender: Start
  - Select the right Blender version
 
-# Sorcar
+## Authors
+ - Mathieu Gaillard
+ - Vojtech Krs
+ - Giorgio Gori
+ - Radomir Mech
+ - Bedrich Benes
+
+## License
+
+See the LICENSE file.
+
+# Original Sorcar documentation
 
 Procedural modeling in Blender using Node Editor
 
